@@ -1,0 +1,18 @@
+body{
+    background-color: blue;
+}
+
+table, tr, th, td{
+  border: 1px solid;
+}
+
+/* #total {
+    background-color: #77ff00;
+} */
+
+li {
+    width: 300px;
+    height: 250px;
+    background: white;
+
+}

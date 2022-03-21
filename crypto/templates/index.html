@@ -1,0 +1,76 @@
+{% load mathfilters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <link rel="stylesheet" href="{% static 'crypto/styles/index.css' %}">
+        <meta charset="utf-8">
+        <title>Crypto API</title>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th>Crypto currency</th>
+                <th>Price at buy in $</th>
+                <th>Quantity in $</th>
+                <th>Quantity</th>
+                <th>Current price</th>
+                <th>Profit/loss in $</th>
+            </tr>
+            <tr>
+                <td>BTC</td>
+                <td>{{ btc_at_buy }}</td>
+                <td>1000</td>
+                <td>0,024377</td>
+                <td>{{ btc }}</td>
+                <td bgcolor="{{ btc_color }}">{{ btc_diff }}</td>
+            </tr>
+            <tr>
+                <td>ETH</td>
+                <td>{{ eth_at_buy }}</td>
+                <td>500</td>
+                <td>0,178055</td>
+                <td>{{ eth }}</td>
+                <td bgcolor="{{ eth_color }}">{{ eth_diff }}</td>
+            </tr>
+            <tr>
+                <td>XLM</td>
+                <td>{{ xlm_at_buy }}</td>
+                <td>300</td>
+                <td>1591,17</td>
+                <td>{{ xlm }}</td>
+                <td bgcolor="{{ xlm_color }}">{{ xlm_diff }}</td>
+            </tr>
+            <tr>
+                <td>XRP</td>
+                <td>{{ xrp_at_buy }}</td>
+                <td>450</td>
+                <td>565,7</td>
+                <td>{{ xrp }}</td>
+                <td bgcolor="{{ xrp_color }}">{{ xrp_diff }}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td bgcolor="{{ total_color }}"> {{ totalpl }}</td>
+            </tr>
+        </table>
+        <div class="container">
+            <h3>Currently trending coins: </h3>
+            {% for i in trending %}
+                <li>{{ i }}</li>
+            {% endfor %}
+        </div>
+        <h3>Price check:</h3>
+        <a href="https://www.coingecko.com/pl" target="_blank">List of coins</a>
+        <form class="" action="" method="post">
+            {% csrf_token %}
+            <input type="text" name="textfield" value="">
+            <button type="submit" name="button">Check</button>
+        </form>
+        <p>The price of this coin is: {{ search_coin }}$</p>
+    </body>
+</html>
