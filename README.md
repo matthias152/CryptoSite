@@ -7,3 +7,10 @@ Current task:
 
 Backlog:
 - User login/registration
+- History of transactions
+
+## How to run
+Type in main directory
+```
+python manage.py runserver
+```
