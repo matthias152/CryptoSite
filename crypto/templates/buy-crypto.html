@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>Buy cryptos</title>
+    </head>
+    <body>
+        <h1>Buy cryptos:</h1>
+        <form class="" action="" method="post">
+            {% csrf_token %}
+            Crypto name: <input type="text" name="cryptoName">
+            How much dollars u want to invest? <input type="number" name="quantityDollars">
+            It will be:
+            <h2>{{ test }}</h2>
+            <input type="submit" name="" value="Buy!">
+        </form>
+    </body>
+</html>

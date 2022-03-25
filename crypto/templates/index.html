@@ -72,5 +72,22 @@
             <button type="submit" name="button">Check</button>
         </form>
         <p>The price of this coin is: {{ search_coin }}$</p>
+        <h3>Your wallet:</h3>
+        <table>
+            <td>Name</td>
+            <td>Crypto quantity</td>
+            <td>Invested</td>
+            <td>Worth now</td>
+            {% for i in ALL_CRYPTOS %}
+            <tr>
+                <td>{{ i }}</td>
+                <td>{{ i.cryptoQuantity }}</td>
+                <td>{{ i.quantityDollars }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <h3>{% for i in crypto_values %}</h3>
+        <h3>{{ i }}</h3>
+        {% endfor %}
     </body>
 </html>

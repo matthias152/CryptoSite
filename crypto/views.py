@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
+from .models import CryptoWallet, CashWallet
 
 # Create your views here.
 coingecko = CoinGeckoAPI()
@@ -17,6 +18,27 @@ def color_counting(price):
 def show_crypto_prices(request):
     TRENDING_COINS = []
     trends = coingecko.get_search_trending()['coins']
+    cryptos = CryptoWallet.objects.all()
+    crypto_values = []
+
+    for i in cryptos:
+        z = coingecko.get_price(ids=str(i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]['usd'] * i.cryptoQuantity
+        crypto_values.append(z)
+
+    print(crypto_values)
+    # print(cryptos)
+    # current_prices = []
+    #
+    # for j in cryptos:
+    #     name = j.getattr(CryptoWallet, 'cryptoName')
+    #     print(j)
+    #     print(name)
+    #     quan = j.getattr(CryptoWallet, 'quantityDollars')
+    #     print("good")
+    #     fina = coingecko.get_price(ids=name, vs_currencies='usd')[str(name)]['usd']
+    #     finalprice = quan / fina
+    #     current_prices.append(finalprice)
+    #
     for i in range(7):
         coin = trends[i]['item']['name']
         TRENDING_COINS.append(coin)
@@ -62,5 +84,26 @@ def show_crypto_prices(request):
         'total_color': totalcolor,
         'trending': TRENDING_COINS,
         'search_coin': coin,
+        'ALL_CRYPTOS': cryptos,
+        # 'current': current_prices,
+        'crypto_values': crypto_values,
 
     })
+
+
+def buy_cryptos(request):
+    if request.method == 'POST':
+        if request.POST.get('cryptoName') and request.POST.get('quantityDollars'):
+            buying_coin = request.POST.get('cryptoName', None)
+            final_coin = coingecko.get_price(ids=buying_coin, vs_currencies='usd')[str(buying_coin)]['usd']
+            quantity_bought = request.POST.get('quantityDollars')
+            cryp = CryptoWallet()
+            cryp.cryptoName = request.POST.get('cryptoName')
+            cryp.quantityDollars = request.POST.get('quantityDollars')
+            cryp.cryptoQuantity =  float(quantity_bought) / float(final_coin)
+            cryp.save()
+            return render(request, 'buy-crypto.html')
+        else:
+            return render(request, 'buy-crypto.html')
+
+    return render(request, "buy-crypto.html")
