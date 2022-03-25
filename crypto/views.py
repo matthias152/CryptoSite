@@ -19,6 +19,13 @@ def show_crypto_prices(request):
     TRENDING_COINS = []
     trends = coingecko.get_search_trending()['coins']
     cryptos = CryptoWallet.objects.all()
+    crypto_values = []
+
+    for i in cryptos:
+        z = coingecko.get_price(ids=str(i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]['usd'] * i.cryptoQuantity
+        crypto_values.append(z)
+
+    print(crypto_values)
     # print(cryptos)
     # current_prices = []
     #
@@ -31,7 +38,7 @@ def show_crypto_prices(request):
     #     fina = coingecko.get_price(ids=name, vs_currencies='usd')[str(name)]['usd']
     #     finalprice = quan / fina
     #     current_prices.append(finalprice)
-
+    #
     for i in range(7):
         coin = trends[i]['item']['name']
         TRENDING_COINS.append(coin)
@@ -79,6 +86,7 @@ def show_crypto_prices(request):
         'search_coin': coin,
         'ALL_CRYPTOS': cryptos,
         # 'current': current_prices,
+        'crypto_values': crypto_values,
 
     })
 
@@ -94,8 +102,8 @@ def buy_cryptos(request):
             cryp.quantityDollars = request.POST.get('quantityDollars')
             cryp.cryptoQuantity =  float(quantity_bought) / float(final_coin)
             cryp.save()
-            return render(request, 'buyer.html')
+            return render(request, 'buy-crypto.html')
         else:
-            return render(request, 'buyer.html')
+            return render(request, 'buy-crypto.html')
 
     return render(request, "buy-crypto.html")
