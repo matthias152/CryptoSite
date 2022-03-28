@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
 from .models import CryptoWallet, CashWallet
+from django.shortcuts import redirect
 
 # Create your views here.
 coingecko = CoinGeckoAPI()
@@ -25,7 +26,7 @@ def show_crypto_prices(request):
         z = coingecko.get_price(ids=str(i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]['usd'] * i.cryptoQuantity
         crypto_values.append(z)
 
-    print(crypto_values)
+    # print(crypto_values)
     # print(cryptos)
     # current_prices = []
     #
@@ -93,13 +94,13 @@ def show_crypto_prices(request):
 
 def buy_cryptos(request):
     if request.method == 'POST':
-        if request.POST.get('cryptoName') and request.POST.get('quantityDollars'):
-            buying_coin = request.POST.get('cryptoName', None)
+        if request.POST.get('cryptoNameBuy') and request.POST.get('quantityDollarsBuy'):
+            buying_coin = request.POST.get('cryptoNameBuy', None)
             final_coin = coingecko.get_price(ids=buying_coin, vs_currencies='usd')[str(buying_coin)]['usd']
-            quantity_bought = request.POST.get('quantityDollars')
+            quantity_bought = request.POST.get('quantityDollarsBuy')
             cryp = CryptoWallet()
-            cryp.cryptoName = request.POST.get('cryptoName')
-            cryp.quantityDollars = request.POST.get('quantityDollars')
+            cryp.cryptoName = request.POST.get('cryptoNameBuy')
+            cryp.quantityDollars = request.POST.get('quantityDollarsBuy')
             cryp.cryptoQuantity =  float(quantity_bought) / float(final_coin)
             cryp.save()
             return render(request, 'buy-crypto.html')
@@ -107,3 +108,21 @@ def buy_cryptos(request):
             return render(request, 'buy-crypto.html')
 
     return render(request, "buy-crypto.html")
+
+def sell_cryptos(request):
+    if request.method == 'POST':
+        if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
+            selling_coin = request.POST.get('cryptoNameSell')
+            selling_coin_quant = request.POST.get('cryptoQuantitySell')
+            cryp = CryptoWallet()
+            cryptosell = cryp.objects.get(name=str(selling_coin))
+            print(cryptosell)
+            cryptosell.cryptoQuantity = float(selling_coin_quant)
+            # cryptosell.save()
+            cryptosell.save()
+            # cryp.save()
+            return render(request, 'sell-crypto.html')
+        else:
+            return render(request, 'sell-crypto.html')
+
+    return render(request, 'sell-crypto.html')
