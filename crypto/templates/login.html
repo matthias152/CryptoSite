@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <div class="header-bar">
+            <h1>Login</h1>
+        </div>
+        <div class="card-body">
+            <form class="" action="" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input class="button" type="submit" name="" value="Login">
+            </form>
+            <h3>Dont have an account?</h3>
+            <a href="http://127.0.0.1:8000/register">Register</a>
+
+        </div>
+    </body>
+</html>

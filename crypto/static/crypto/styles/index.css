@@ -2,13 +2,21 @@ body{
     background-color: gray;
 }
 
-table, tr, th, td{
-  border: 1px solid;
+.tr, th, td {
+    border: 1px solid;
 }
 
-/* #total {
-    background-color: #77ff00;
-} */
+#first_table{
+    display:inline-table;
+}
+
+#second_table {
+    display:inline-table;
+}
+
+#third_table {
+    display:inline-table;
+}
 
 .container {
     width: 220px;
