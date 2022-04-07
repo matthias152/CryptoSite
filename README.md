@@ -6,7 +6,8 @@ Current task:
 - sell option
 
 Backlog:
-- History of transactions
+- start using balance
+- history of transactions
 
 ## How to run
 Type in main directory
