@@ -1,6 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from pycoingecko import CoinGeckoAPI
-from .models import CryptoWallet, CashWallet
+from .models import CryptoWallet, Balance
+from .forms import NewUserForm
+from django.contrib.auth import login
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+
 
 # Create your views here.
 coingecko = CoinGeckoAPI()
@@ -15,95 +21,104 @@ def color_counting(price):
         return "gray"
 
 
+def register_request(request):
+    if request.method == 'POST':
+        form = NewUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful.")
+            return render(request, 'index.html')
+        messages.error(request, "Unsuccessful registration. Invalid information.")
+    form = NewUserForm()
+    return render(request=request, template_name="register.html", context={"register_form":form})
+
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    fields = '__all__'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return ('http://127.0.0.1:8000/')
+
+
+@login_required(login_url='http://127.0.0.1:8000/login')
 def show_crypto_prices(request):
     TRENDING_COINS = []
+    current_crypto_values = []
+    profit_loss = []
     trends = coingecko.get_search_trending()['coins']
     cryptos = CryptoWallet.objects.all()
-    crypto_values = []
+    user_cryptos = cryptos.filter(user=request.user)
+    balances = Balance.objects.all()
+    user_balance = balances.filter(user=request.user)
 
-    for i in cryptos:
+    for i in user_cryptos:
+        z = i.quantityDollars - coingecko.get_price(ids=str(i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]['usd'] * i.cryptoQuantity
+        profit_loss.append(z)
+
+    for i in user_cryptos:
         z = coingecko.get_price(ids=str(i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]['usd'] * i.cryptoQuantity
-        crypto_values.append(z)
+        current_crypto_values.append(z)
 
-    print(crypto_values)
-    # print(cryptos)
-    # current_prices = []
-    #
-    # for j in cryptos:
-    #     name = j.getattr(CryptoWallet, 'cryptoName')
-    #     print(j)
-    #     print(name)
-    #     quan = j.getattr(CryptoWallet, 'quantityDollars')
-    #     print("good")
-    #     fina = coingecko.get_price(ids=name, vs_currencies='usd')[str(name)]['usd']
-    #     finalprice = quan / fina
-    #     current_prices.append(finalprice)
-    #
     for i in range(7):
         coin = trends[i]['item']['name']
         TRENDING_COINS.append(coin)
-
-    bitcoin = coingecko.get_price(ids='bitcoin', vs_currencies='usd')['bitcoin']['usd']
-    btcdiff = (bitcoin * 0.02437757945262583) - 1000
-    btccolor = color_counting(btcdiff)
-    ethereum = coingecko.get_price(ids='ethereum', vs_currencies='usd')['ethereum']['usd']
-    ethdiff = (ethereum * 0.17805570294610965) - 500
-    ethcolor = color_counting(ethdiff)
-    stellar = coingecko.get_price(ids='stellar', vs_currencies='usd')['stellar']['usd']
-    xlmdiff = (stellar * 1591.1742866235281) - 300
-    xlmcolor = color_counting(xlmdiff)
-    ripple = coingecko.get_price(ids='ripple', vs_currencies='usd')['ripple']['usd']
-    ripplediff = (ripple * 565.7303201279304) - 450
-    ripplecolor = color_counting(ripplediff)
-    total = btcdiff + ethdiff + xlmdiff + ripplediff
-    totalcolor = color_counting(total)
 
     if request.method == 'POST':
         coin_id = request.POST.get('textfield', None)
         coin = coingecko.get_price(ids=coin_id, vs_currencies='usd')[str(coin_id)]['usd']
 
-
     return render(request, "index.html", {
-        'btc': bitcoin,
-        'btc_at_buy': 40904,
-        'btc_diff': round(btcdiff, 5),
-        'btc_color': btccolor,
-        'eth': ethereum,
-        'eth_at_buy': 2806,
-        'eth_diff': round(ethdiff, 5),
-        'eth_color': ethcolor,
-        'xlm': stellar,
-        'xlm_at_buy': 0.188577,
-        'xlm_diff': round(xlmdiff, 5),
-        'xlm_color': xlmcolor,
-        'xrp': ripple,
-        'xrp_at_buy': 0.795633,
-        'xrp_diff': round(ripplediff, 5),
-        'xrp_color': ripplecolor,
-        'totalpl': round(total, 5),
-        'total_color': totalcolor,
         'trending': TRENDING_COINS,
         'search_coin': coin,
         'ALL_CRYPTOS': cryptos,
-        # 'current': current_prices,
-        'crypto_values': crypto_values,
+        'current_crypto_values': current_crypto_values,
+        'user_cryptos': user_cryptos,
+        'user_balance': user_balance,
+        'profit_loss': profit_loss,
+        'user': request.user,
 
     })
 
 
+@login_required(login_url='http://127.0.0.1:8000/login')
 def buy_cryptos(request):
     if request.method == 'POST':
-        if request.POST.get('cryptoName') and request.POST.get('quantityDollars'):
-            buying_coin = request.POST.get('cryptoName', None)
+        if request.POST.get('cryptoNameBuy') and request.POST.get('quantityDollarsBuy'):
+            buying_coin = request.POST.get('cryptoNameBuy', None)
             final_coin = coingecko.get_price(ids=buying_coin, vs_currencies='usd')[str(buying_coin)]['usd']
-            quantity_bought = request.POST.get('quantityDollars')
+            quantity_bought = request.POST.get('quantityDollarsBuy')
             cryp = CryptoWallet()
-            cryp.cryptoName = request.POST.get('cryptoName')
-            cryp.quantityDollars = request.POST.get('quantityDollars')
-            cryp.cryptoQuantity =  float(quantity_bought) / float(final_coin)
+            cryp.user = request.user
+            cryp.cryptoName = request.POST.get('cryptoNameBuy')
+            cryp.quantityDollars = request.POST.get('quantityDollarsBuy')
+            cryp.cryptoQuantity = float(quantity_bought) / float(final_coin)
             cryp.save()
             return render(request, 'buy-crypto.html')
         else:
             return render(request, 'buy-crypto.html')
 
     return render(request, "buy-crypto.html")
+
+
+@login_required(login_url='http://127.0.0.1:8000/login')
+def sell_cryptos(request):
+    if request.method == 'POST':
+        if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
+            selling_coin = request.POST.get('cryptoNameSell')
+            print(selling_coin)
+            selling_coin_quant = request.POST.get('cryptoQuantitySell')
+            print(selling_coin_quant)
+            cryp = CryptoWallet()
+            cryptosell = cryp.objects.get(name=str(selling_coin))
+            print(cryptosell)
+            cryptosell.user = request.user
+            cryptosell.cryptoQuantity = float(selling_coin_quant)
+            cryptosell.save()
+            return render(request, 'sell-crypto .html')
+        else:
+            return render(request, 'sell-crypto.html')
+
+    return render(request, 'sell-crypto.html')

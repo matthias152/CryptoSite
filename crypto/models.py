@@ -1,11 +1,14 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 # Create your models here.
 
 
 class CryptoWallet(models.Model):
-    cryptoName = models.CharField(max_length=30, unique=True)
+    user = models.ForeignKey(
+            User, on_delete=models.CASCADE, null=True, blank=True)
+    cryptoName = models.CharField(max_length=30)
     quantityDollars = models.FloatField()
     cryptoQuantity = models.FloatField(blank=True, null=True)
 
@@ -13,8 +16,10 @@ class CryptoWallet(models.Model):
         return f'{self.cryptoName}'
 
 
-class CashWallet(models.Model):
-    dollars = models.FloatField()
+class Balance(models.Model):
+    user = models.ForeignKey(
+            User, on_delete=models.CASCADE, null=True, blank=True)
+    balance = models.FloatField()
 
     def __str__(self):
-        return f'Balance {self.dollars}'
+        return f'{self.balance}'
