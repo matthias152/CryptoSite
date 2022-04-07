@@ -2,11 +2,10 @@
 Repository for python django web project using cryptocurrency API
 
 Current task:
-- table functionality
-- buy/sell option
+- make buy option to be able to buy more of given cryptocurrency
+- sell option
 
 Backlog:
-- User login/registration
 - History of transactions
 
 ## How to run
