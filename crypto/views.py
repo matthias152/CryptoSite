@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
 from .models import CryptoWallet, Balance
 from .forms import NewUserForm
@@ -10,6 +10,9 @@ from django.contrib.auth.views import LoginView
 
 coingecko = CoinGeckoAPI()
 
+cryptos = CryptoWallet.objects.all()
+balances = Balance.objects.all()
+user_cryptos_list = []
 
 
 def register_request(request):
@@ -22,7 +25,8 @@ def register_request(request):
             return render(request, 'index.html')
         messages.error(request, "Unsuccessful registration. Invalid information.")
     form = NewUserForm()
-    return render(request=request, template_name="register.html", context={"register_form":form})
+    return render(
+        request=request, template_name="register.html", context={"register_form": form})
 
 
 class CustomLoginView(LoginView):
@@ -40,22 +44,20 @@ def show_crypto_prices(request):
     current_crypto_values = []
     profit_loss = []
     trends = coingecko.get_search_trending()['coins']
-    cryptos = CryptoWallet.objects.all()
-    user_cryptos = cryptos.filter(user=request.user)
-    balances = Balance.objects.all()
     user_balance = balances.get(user=request.user)
     user_final_balance = float(user_balance.balance)
+    user_cryptos = cryptos.filter(user=request.user)
 
     for i in user_cryptos:
         z = round(coingecko.get_price(ids=str(
-        i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]
-        ['usd'] * i.cryptoQuantity - i.quantityDollars, 3)
+            i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]
+            ['usd'] * i.cryptoQuantity - i.quantityDollars, 3)
         profit_loss.append(z)
 
     for i in user_cryptos:
-        z = round(coingecko.get_price(ids=str(i.cryptoName).lower(),
-        vs_currencies='usd')[str(i.cryptoName).lower()]
-        ['usd'] * i.cryptoQuantity, 5)
+        z = round(coingecko.get_price(ids=str(
+            i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]
+            ['usd'] * i.cryptoQuantity, 5)
         current_crypto_values.append(z)
 
     for i in range(7):
@@ -75,7 +77,6 @@ def show_crypto_prices(request):
         'user_final_balance': user_final_balance,
         'profit_loss': profit_loss,
         'user': request.user,
-
     })
 
 
@@ -83,15 +84,14 @@ def show_crypto_prices(request):
 def buy_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameBuy') and request.POST.get('quantityDollarsBuy'):
-            balances = Balance.objects.all()
             user_balance = balances.get(user=request.user)
             user_final_balance = float(user_balance.balance)
-            buying_coin = request.POST.get('cryptoNameBuy', None)
-            buying_coin_exchange = coingecko.get_price(ids=buying_coin, vs_currencies='usd')[str(buying_coin)]['usd']
-            quantity_bought = request.POST.get('quantityDollarsBuy')
-            cryptos = CryptoWallet.objects.all()
             user_cryptos = cryptos.filter(user=request.user)
-            user_cryptos_list = []
+            buying_coin = request.POST.get('cryptoNameBuy', None)
+            buying_coin_exchange = coingecko.get_price(ids=buying_coin,
+                                    vs_currencies='usd')[str(buying_coin)]['usd']
+            quantity_bought = request.POST.get('quantityDollarsBuy')
+
         for i in user_cryptos:
             z = str(i.cryptoName)
             user_cryptos_list.append(z)
@@ -122,15 +122,14 @@ def buy_cryptos(request):
 def sell_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
-            balances = Balance.objects.all()
             user_balance = balances.get(user=request.user)
-            selling_coin = request.POST.get('cryptoNameSell')
-            selling_coin_exchange = coingecko.get_price(ids=selling_coin, vs_currencies='usd')[str(selling_coin)]['usd']
-            selling_quantity = request.POST.get('cryptoQuantitySell')
-            cryptos = CryptoWallet.objects.all()
             user_cryptos = cryptos.filter(user=request.user)
-            user_cryptos_list = []
+            selling_coin = request.POST.get('cryptoNameSell')
+            selling_coin_exchange = coingecko.get_price(ids=selling_coin,
+                                        vs_currencies='usd')[str(selling_coin)]['usd']
+            selling_quantity = request.POST.get('cryptoQuantitySell')
             y = user_cryptos.get(cryptoName=selling_coin)
+
             for i in user_cryptos:
                 z = str(i.cryptoName)
                 user_cryptos_list.append(z)
