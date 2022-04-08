@@ -8,13 +8,15 @@
         <title>Crypto API</title>
     </head>
     <body>
-        <h1>Hello, {{ user }}, your current balance is: {{ user_balance }}$</h1>
+        <h1>Hello, {{ user }}, your current balance is: {{ user_final_balance }}$</h1>
 
         {% if request.user.is_authenticated %}
         <a href="{% url 'logout' %}">Log Out</a>
         {% else %}
         <a href="{% url 'login' %}">Log In</a>
         {% endif %}
+        <a href="http://127.0.0.1:8000/buy-crypto">Buy cryptos</a>
+        <a href="http://127.0.0.1:8000/sell-crypto">Sell cryptos</a>
         <h3>Your wallet:</h3>
         <table id="first_table">
             <td>Name</td>
