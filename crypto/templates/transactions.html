@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>Your transactions history</title>
+        <link rel="stylesheet" href="{% static 'crypto/styles/transactions.css' %}">
+    </head>
+    <body>
+        <table id="transaction-table">
+            <td>Date</td>
+            <td>Hour</td>
+            <td>Operation</td>
+            <td>Name</td>
+            <td>Crypto quantity</td>
+            <td>$$</td>
+            <td>Balance</td>
+            {% for i in transactions %}
+            <tr>
+                <td>{{i.day_created}}</td>
+                <td>{{i.time_created}}</td>
+                <td>{{i.type}}</td>
+                <td>{{i.coin}}</td>
+                <td>{{i.quantityCrypto}}</td>
+                <td>{{i.quantityDollars}}</td>
+                <td>{{i.balance_after}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>
