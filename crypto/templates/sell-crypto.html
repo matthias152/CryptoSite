@@ -9,7 +9,7 @@
         <form class="" action="" method="post">
             {% csrf_token %}
             Crypto name: <input type="text" name="cryptoNameSell">
-            How much of this crypto u want to sell? <input type="number" name="cryptoQuantitySell">
+            How much of this crypto u want to sell? <input type="number" step="any" min=0 name="cryptoQuantitySell">
             <input type="submit" name="" value="Sell!">
         </form>
     </body>

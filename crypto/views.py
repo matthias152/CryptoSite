@@ -1,17 +1,21 @@
 from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
-from .models import CryptoWallet, Balance
+from .models import CryptoWallet, Balance, Transaction
 from .forms import NewUserForm
 from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from datetime import date, time, datetime
 
 
 coingecko = CoinGeckoAPI()
 
+today = date.today()
+curr_time = z = datetime.now().time()
 cryptos = CryptoWallet.objects.all()
 balances = Balance.objects.all()
+transcactions = Transaction.objects.all()
 user_cryptos_list = []
 
 
@@ -39,7 +43,7 @@ class CustomLoginView(LoginView):
 
 
 @login_required(login_url='http://127.0.0.1:8000/login')
-def show_crypto_prices(request):
+def wallet(request):
     TRENDING_COINS = []
     current_crypto_values = []
     profit_loss = []
@@ -103,6 +107,18 @@ def buy_cryptos(request):
                 y.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
+                # transaction
+                new_transaction = Transaction()
+                new_transaction.user = request.user
+                new_transaction.day_created = today
+                new_transaction.time_created = curr_time
+                new_transaction.coin = buying_coin
+                new_transaction.type = "buy"
+                new_transaction.quantityCrypto = float(quantity_bought) / float(buying_coin_exchange)
+                new_transaction.quantityDollars = quantity_bought
+                new_transaction.balance_after = user_final_balance - float(quantity_bought)
+                new_transaction.save()
+
                 return render(request, 'buy-crypto.html')
             else:
                 new_cryp = CryptoWallet()
@@ -113,6 +129,17 @@ def buy_cryptos(request):
                 new_cryp.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
+                # transaction
+                new_transaction = Transaction()
+                new_transaction.user = request.user
+                new_transaction.day_created = today
+                new_transaction.time_created = curr_time
+                new_transaction.coin = buying_coin
+                new_transaction.type = "buy"
+                new_transaction.quantityCrypto = float(quantity_bought) / float(buying_coin_exchange)
+                new_transaction.quantityDollars = quantity_bought
+                new_transaction.balance_after = user_final_balance - float(quantity_bought)
+                new_transaction.save()
                 return render(request, 'buy-crypto.html')
         return render(request, 'buy-crypto.html')
     return render(request, 'buy-crypto.html')
@@ -123,11 +150,12 @@ def sell_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
             user_balance = balances.get(user=request.user)
+            user_final_balance = float(user_balance.balance)
             user_cryptos = cryptos.filter(user=request.user)
             selling_coin = request.POST.get('cryptoNameSell')
+            selling_quantity = request.POST.get('cryptoQuantitySell')
             selling_coin_exchange = coingecko.get_price(ids=selling_coin,
                                         vs_currencies='usd')[str(selling_coin)]['usd']
-            selling_quantity = request.POST.get('cryptoQuantitySell')
             y = user_cryptos.get(cryptoName=selling_coin)
 
             for i in user_cryptos:
@@ -139,6 +167,17 @@ def sell_cryptos(request):
                     y.save()
                     user_balance.balance += float(selling_quantity) * float(selling_coin_exchange)
                     user_balance.save()
+                    # transaction
+                    new_transaction = Transaction()
+                    new_transaction.user = request.user
+                    new_transaction.day_created = today
+                    new_transaction.time_created = curr_time
+                    new_transaction.coin = selling_coin
+                    new_transaction.type = "sell"
+                    new_transaction.quantityCrypto = selling_quantity
+                    new_transaction.quantityDollars = float(selling_quantity) * float(selling_coin_exchange)
+                    new_transaction.balance_after = user_final_balance + float(selling_quantity) * float(selling_coin_exchange)
+                    new_transaction.save()
                     return render(request, 'sell-crypto.html')
                 else:
                     return render(request, 'sell-crypto.html')
@@ -146,3 +185,12 @@ def sell_cryptos(request):
                 return render(request, 'sell-crypto.html')
         return render(request, 'sell-crypto.html')
     return render(request, 'sell-crypto.html')
+
+
+@login_required(login_url='http://127.0.0.1:8000/login')
+def transactions(request):
+    user_transactions = transcactions.filter(user=request.user)
+
+    return render(request, 'transactions.html', {
+        'transactions': user_transactions,
+    })

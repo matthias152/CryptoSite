@@ -1,0 +1,6 @@
+body{
+    background-color: gray;
+}
+
+.table, tr, th, td {
+    border: 1px solid;
