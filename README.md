@@ -2,8 +2,8 @@
 Repository for python django web project using cryptocurrency API
 
 Current task:
-- add transactions history
 - fix profit/loss algorithms
+- transactions history ordering
 
 Backlog:
 
