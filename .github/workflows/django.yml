@@ -19,5 +19,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Run Tests
-        run: python manage.py runserver
+      - name: Run server
+        run: |
+              pipenv shell
+              python manage.py runserver
