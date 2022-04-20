@@ -34,4 +34,4 @@ class Transaction(models.Model):
     balance_after = models.FloatField()
 
     class Meta:
-        ordering = ['day_created', 'time_created']
+        ordering = ['-day_created', '-time_created']
