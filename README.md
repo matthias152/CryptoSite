@@ -1,11 +1,10 @@
 # CryptoAPI
 Repository for python django web project using cryptocurrency API
 
-Current task:
+To do:
 - fix profit/loss algorithms
-- transactions history ordering
-
-Backlog:
+- restapi
+- bootstrap
 
 ## How to run
 Type in main directory
