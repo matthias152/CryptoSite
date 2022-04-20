@@ -19,6 +19,32 @@ transcactions = Transaction.objects.all()
 user_cryptos_list = []
 
 
+def CreateBuyTransaction(user, day, time, bcoin, type, qb, bce, ufb):
+    new_transaction = Transaction()
+    new_transaction.user = user
+    new_transaction.day_created = day
+    new_transaction.time_created = time
+    new_transaction.coin = bcoin
+    new_transaction.type = type
+    new_transaction.quantityCrypto = float(qb) / float(bce)
+    new_transaction.quantityDollars = qb
+    new_transaction.balance_after = ufb - float(qb)
+    new_transaction.save()
+
+
+def CreateSellTransaction(user, day, time, scoin, type, sq, sce, ufb):
+    new_transaction = Transaction()
+    new_transaction.user = user
+    new_transaction.day_created = day
+    new_transaction.time_created = time
+    new_transaction.coin = scoin
+    new_transaction.type = type
+    new_transaction.quantityCrypto = sq
+    new_transaction.quantityDollars = float(sq) * float(sce)
+    new_transaction.balance_after = ufb + float(sq) * float(sce)
+    new_transaction.save()
+
+
 def register_request(request):
     if request.method == 'POST':
         form = NewUserForm(request.POST)
@@ -99,7 +125,7 @@ def buy_cryptos(request):
         for i in user_cryptos:
             z = str(i.cryptoName)
             user_cryptos_list.append(z)
-        if float(quantity_bought) < user_final_balance:
+        if float(quantity_bought) <= user_final_balance:
             if str(buying_coin) in user_cryptos_list:
                 y = user_cryptos.get(cryptoName=buying_coin)
                 y.cryptoQuantity += float(quantity_bought) / float(buying_coin_exchange)
@@ -107,18 +133,8 @@ def buy_cryptos(request):
                 y.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
-                # transaction
-                new_transaction = Transaction()
-                new_transaction.user = request.user
-                new_transaction.day_created = today
-                new_transaction.time_created = curr_time
-                new_transaction.coin = buying_coin
-                new_transaction.type = "buy"
-                new_transaction.quantityCrypto = float(quantity_bought) / float(buying_coin_exchange)
-                new_transaction.quantityDollars = quantity_bought
-                new_transaction.balance_after = user_final_balance - float(quantity_bought)
-                new_transaction.save()
-
+                CreateBuyTransaction(request.user, today, curr_time,
+                    buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
                 return render(request, 'buy-crypto.html')
             else:
                 new_cryp = CryptoWallet()
@@ -129,17 +145,8 @@ def buy_cryptos(request):
                 new_cryp.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
-                # transaction
-                new_transaction = Transaction()
-                new_transaction.user = request.user
-                new_transaction.day_created = today
-                new_transaction.time_created = curr_time
-                new_transaction.coin = buying_coin
-                new_transaction.type = "buy"
-                new_transaction.quantityCrypto = float(quantity_bought) / float(buying_coin_exchange)
-                new_transaction.quantityDollars = quantity_bought
-                new_transaction.balance_after = user_final_balance - float(quantity_bought)
-                new_transaction.save()
+                CreateBuyTransaction(request.user, today, curr_time,
+                    buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
                 return render(request, 'buy-crypto.html')
         return render(request, 'buy-crypto.html')
     return render(request, 'buy-crypto.html')
@@ -162,22 +169,13 @@ def sell_cryptos(request):
                 z = str(i.cryptoName)
                 user_cryptos_list.append(z)
             if str(selling_coin) in user_cryptos_list:
-                if float(y.cryptoQuantity) > float(selling_quantity):
+                if float(y.cryptoQuantity) >= float(selling_quantity):
                     y.cryptoQuantity -= float(selling_quantity)
                     y.save()
                     user_balance.balance += float(selling_quantity) * float(selling_coin_exchange)
                     user_balance.save()
-                    # transaction
-                    new_transaction = Transaction()
-                    new_transaction.user = request.user
-                    new_transaction.day_created = today
-                    new_transaction.time_created = curr_time
-                    new_transaction.coin = selling_coin
-                    new_transaction.type = "sell"
-                    new_transaction.quantityCrypto = selling_quantity
-                    new_transaction.quantityDollars = float(selling_quantity) * float(selling_coin_exchange)
-                    new_transaction.balance_after = user_final_balance + float(selling_quantity) * float(selling_coin_exchange)
-                    new_transaction.save()
+                    CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
+                        selling_quantity, selling_coin_exchange, user_final_balance)
                     return render(request, 'sell-crypto.html')
                 else:
                     return render(request, 'sell-crypto.html')
