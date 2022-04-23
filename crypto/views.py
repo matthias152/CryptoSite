@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
-from .models import CryptoWallet, Balance, Transaction
+from .models import CryptoWallet, Balance, Transaction, BuyPrice
 from .forms import NewUserForm
 from django.contrib.auth import login
 from django.contrib import messages
@@ -16,7 +16,14 @@ curr_time = z = datetime.now().time()
 cryptos = CryptoWallet.objects.all()
 balances = Balance.objects.all()
 transcactions = Transaction.objects.all()
+buy_prices = BuyPrice.objects.all()
 user_cryptos_list = []
+# user_profit_list = []
+#
+#
+# user_prices = buy_prices.get(user=request.user)
+# for i in user_prices:
+#
 
 
 def CreateBuyTransaction(user, day, time, bcoin, type, qb, bce, ufb):
@@ -27,7 +34,7 @@ def CreateBuyTransaction(user, day, time, bcoin, type, qb, bce, ufb):
     new_transaction.coin = bcoin
     new_transaction.type = type
     new_transaction.quantityCrypto = float(qb) / float(bce)
-    new_transaction.quantityDollars = qb
+    new_transaction.price = bce
     new_transaction.balance_after = ufb - float(qb)
     new_transaction.save()
 
@@ -40,9 +47,18 @@ def CreateSellTransaction(user, day, time, scoin, type, sq, sce, ufb):
     new_transaction.coin = scoin
     new_transaction.type = type
     new_transaction.quantityCrypto = sq
-    new_transaction.quantityDollars = float(sq) * float(sce)
+    new_transaction.price = sce
     new_transaction.balance_after = ufb + float(sq) * float(sce)
     new_transaction.save()
+
+
+def CollectBuyPrices(user, crypto, cq, price):
+    bPrice = BuyPrice()
+    bPrice.user = user
+    bPrice.crypto = CryptoWallet.objects.get(cryptoName=crypto)
+    bPrice.cryptoQuantity = cq
+    bPrice.price = price
+    bPrice.save()
 
 
 def register_request(request):
@@ -121,7 +137,7 @@ def buy_cryptos(request):
             buying_coin_exchange = coingecko.get_price(ids=buying_coin,
                                     vs_currencies='usd')[str(buying_coin)]['usd']
             quantity_bought = request.POST.get('quantityDollarsBuy')
-
+            cryptoQuanityBought = float(quantity_bought) / float(buying_coin_exchange)
         for i in user_cryptos:
             z = str(i.cryptoName)
             user_cryptos_list.append(z)
@@ -135,6 +151,7 @@ def buy_cryptos(request):
                 user_balance.save()
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
+                CollectBuyPrices(request.user, buying_coin, cryptoQuanityBought, buying_coin_exchange)
                 return render(request, 'buy-crypto.html')
             else:
                 new_cryp = CryptoWallet()
@@ -147,6 +164,7 @@ def buy_cryptos(request):
                 user_balance.save()
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
+                CollectBuyPrices(request.user, buying_coin, cryptoQuanityBought, buying_coin_exchange)
                 return render(request, 'buy-crypto.html')
         return render(request, 'buy-crypto.html')
     return render(request, 'buy-crypto.html')
@@ -172,6 +190,8 @@ def sell_cryptos(request):
                 if float(y.cryptoQuantity) >= float(selling_quantity):
                     y.cryptoQuantity -= float(selling_quantity)
                     y.save()
+                    if y.cryptoQuantity == 0:
+                        y.delete()
                     user_balance.balance += float(selling_quantity) * float(selling_coin_exchange)
                     user_balance.save()
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
@@ -188,7 +208,6 @@ def sell_cryptos(request):
 @login_required(login_url='http://127.0.0.1:8000/login')
 def transactions(request):
     user_transactions = transcactions.filter(user=request.user)
-
     return render(request, 'transactions.html', {
         'transactions': user_transactions,
     })

@@ -9,6 +9,9 @@ class CryptoWallet(models.Model):
     quantityDollars = models.FloatField()
     cryptoQuantity = models.FloatField(blank=True, null=True)
 
+    class Meta:
+        ordering = ['cryptoName']
+
     def __str__(self):
         return f'{self.cryptoName}'
 
@@ -30,8 +33,23 @@ class Transaction(models.Model):
     type = models.CharField(max_length=30)
     coin = models.CharField(max_length=30)
     quantityCrypto = models.FloatField()
-    quantityDollars = models.FloatField()
+    price = models.FloatField()
     balance_after = models.FloatField()
 
     class Meta:
         ordering = ['-day_created', '-time_created']
+
+
+class BuyPrice(models.Model):
+    user = models.ForeignKey(
+            User, on_delete=models.CASCADE, null=True, blank=True)
+    crypto = models.ForeignKey(
+                CryptoWallet, on_delete=models.CASCADE, null=True, blank=True)
+    cryptoQuantity = models.FloatField()
+    price = models.FloatField()
+
+    class Meta:
+        ordering = ['crypto']
+
+    def __str__(self):
+        return f'{self.crypto} buy'
