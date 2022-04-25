@@ -85,15 +85,28 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         return ('http://127.0.0.1:8000/')
 
+@login_required(login_url='http://127.0.0.1:8000/login')
+def wallet_test(request):
+    profit_loss_all = {}
+    user_cryptos = buy_prices.filter(user=request.user)
+    
+    for i in user_cryptos:
+        profit_loss = (i.cryptoQuantity * get_coin_price(i.cryptoName)) - (i.cryptoQuantity * i.price)
+        profit_loss_all[str(i.cryptoName)] = profit_loss
+    
+    print(profit_loss_all)
 
+    return render(request, "wallet_test.html", {
+        'profit_loss_all': profit_loss_all.items(),
+    }) 
+ 
 @login_required(login_url='http://127.0.0.1:8000/login')
 def wallet(request):
     TRENDING_COINS = []
     current_crypto_values = []
     profit_loss = []
     trends = coingecko.get_search_trending()['coins']
-    user_balance = balances.get(user=request.user)
-    user_final_balance = float(user_balance.balance)
+    user_final_balance = float(balances.get(user=request.user).balance)
     user_cryptos = cryptos.filter(user=request.user)
     user_prices = buy_prices.filter(user=request.user)
 

@@ -10,4 +10,5 @@ urlpatterns = [
     path('sell-crypto', sell_cryptos),
     path('register', register_request),
     path('transactions', transactions),
+    path('wallet_test', wallet_test),
 ]
