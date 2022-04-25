@@ -12,18 +12,18 @@ from datetime import date, time, datetime
 coingecko = CoinGeckoAPI()
 
 today = date.today()
-curr_time = z = datetime.now().time()
 cryptos = CryptoWallet.objects.all()
 balances = Balance.objects.all()
 transcactions = Transaction.objects.all()
 buy_prices = BuyPrice.objects.all()
 user_cryptos_list = []
-# user_profit_list = []
-#
-#
-# user_prices = buy_prices.get(user=request.user)
-# for i in user_prices:
-#
+user_profitloss_dict = {}
+profit_loss_final = []
+
+
+def get_coin_price(coin):
+    c = coingecko.get_price(ids=str(coin).lower(), vs_currencies='usd')[str(coin).lower()]['usd']
+    return float(c)
 
 
 def CreateBuyTransaction(user, day, time, bcoin, type, qb, bce, ufb):
@@ -52,10 +52,12 @@ def CreateSellTransaction(user, day, time, scoin, type, sq, sce, ufb):
     new_transaction.save()
 
 
-def CollectBuyPrices(user, crypto, cq, price):
+def CollectBuyPrices(user, day, time, crypto, cq, price):
     bPrice = BuyPrice()
     bPrice.user = user
-    bPrice.crypto = CryptoWallet.objects.get(cryptoName=crypto)
+    bPrice.day_created = day
+    bPrice.time_created = time
+    bPrice.cryptoName = crypto
     bPrice.cryptoQuantity = cq
     bPrice.price = price
     bPrice.save()
@@ -93,36 +95,42 @@ def wallet(request):
     user_balance = balances.get(user=request.user)
     user_final_balance = float(user_balance.balance)
     user_cryptos = cryptos.filter(user=request.user)
+    user_prices = buy_prices.filter(user=request.user)
+
+    for i in user_prices:
+        if str(i.cryptoName) not in user_profitloss_dict:
+            user_profitloss_dict[str(i.cryptoName)] = []
+
+    for j in user_prices:
+        profit_losss = j.cryptoQuantity * get_coin_price(j.cryptoName) - j.cryptoQuantity * j.price
+        user_profitloss_dict[str(j.cryptoName)].append(float(profit_losss))
+
+    for i in user_profitloss_dict:
+        z = user_profitloss_dict[i]
+        y = sum(z)
+        profit_loss_final.append(y)
 
     for i in user_cryptos:
-        z = round(coingecko.get_price(ids=str(
-            i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]
-            ['usd'] * i.cryptoQuantity - i.quantityDollars, 3)
+        z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity - i.quantityDollars, 3)
         profit_loss.append(z)
 
     for i in user_cryptos:
-        z = round(coingecko.get_price(ids=str(
-            i.cryptoName).lower(), vs_currencies='usd')[str(i.cryptoName).lower()]
-            ['usd'] * i.cryptoQuantity, 5)
+        z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity, 5)
         current_crypto_values.append(z)
 
     for i in range(7):
         coin = trends[i]['item']['name']
         TRENDING_COINS.append(coin)
 
-    if request.method == 'POST':
-        coin_id = request.POST.get('textfield', None)
-        coin = coingecko.get_price(ids=coin_id, vs_currencies='usd')[str(coin_id)]['usd']
-
     return render(request, "index.html", {
         'trending': TRENDING_COINS,
-        'search_coin': coin,
         'ALL_CRYPTOS': cryptos,
         'current_crypto_values': current_crypto_values,
         'user_cryptos': user_cryptos,
         'user_final_balance': user_final_balance,
-        'profit_loss': profit_loss,
         'user': request.user,
+        'test': user_profitloss_dict,
+        'profit_loss': profit_loss_final,
     })
 
 
@@ -134,10 +142,10 @@ def buy_cryptos(request):
             user_final_balance = float(user_balance.balance)
             user_cryptos = cryptos.filter(user=request.user)
             buying_coin = request.POST.get('cryptoNameBuy', None)
-            buying_coin_exchange = coingecko.get_price(ids=buying_coin,
-                                    vs_currencies='usd')[str(buying_coin)]['usd']
+            buying_coin_exchange = get_coin_price(buying_coin)
             quantity_bought = request.POST.get('quantityDollarsBuy')
-            cryptoQuanityBought = float(quantity_bought) / float(buying_coin_exchange)
+            cryptoQuantityBought = float(quantity_bought) / float(buying_coin_exchange)
+
         for i in user_cryptos:
             z = str(i.cryptoName)
             user_cryptos_list.append(z)
@@ -149,9 +157,10 @@ def buy_cryptos(request):
                 y.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
+                curr_time = datetime.now().time()
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
-                CollectBuyPrices(request.user, buying_coin, cryptoQuanityBought, buying_coin_exchange)
+                CollectBuyPrices(request.user, today, curr_time, buying_coin, cryptoQuantityBought, buying_coin_exchange)
                 return render(request, 'buy-crypto.html')
             else:
                 new_cryp = CryptoWallet()
@@ -162,9 +171,10 @@ def buy_cryptos(request):
                 new_cryp.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
+                curr_time = datetime.now().time()
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
-                CollectBuyPrices(request.user, buying_coin, cryptoQuanityBought, buying_coin_exchange)
+                CollectBuyPrices(request.user, today, curr_time, buying_coin, cryptoQuantityBought, buying_coin_exchange)
                 return render(request, 'buy-crypto.html')
         return render(request, 'buy-crypto.html')
     return render(request, 'buy-crypto.html')
@@ -179,9 +189,10 @@ def sell_cryptos(request):
             user_cryptos = cryptos.filter(user=request.user)
             selling_coin = request.POST.get('cryptoNameSell')
             selling_quantity = request.POST.get('cryptoQuantitySell')
-            selling_coin_exchange = coingecko.get_price(ids=selling_coin,
-                                        vs_currencies='usd')[str(selling_coin)]['usd']
+            selling_coin_exchange = get_coin_price(selling_coin)
             y = user_cryptos.get(cryptoName=selling_coin)
+            user_prices = buy_prices.filter(user=request.user, cryptoName=selling_coin)
+            testing = float(selling_quantity)
 
             for i in user_cryptos:
                 z = str(i.cryptoName)
@@ -194,8 +205,25 @@ def sell_cryptos(request):
                         y.delete()
                     user_balance.balance += float(selling_quantity) * float(selling_coin_exchange)
                     user_balance.save()
+                    curr_time = datetime.now().time()
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
                         selling_quantity, selling_coin_exchange, user_final_balance)
+                        # something is not yes in this algorithm
+                    for i in user_prices:
+                        for j in user_prices[1:]:
+                            if testing > i.cryptoQuantity:
+                                testing = testing - i.cryptoQuantity
+                                i.delete()
+                                j.cryptoQuantity -= testing
+                                j.save()
+                                if testing < 0:
+                                    break
+                                else:
+                                    continue
+                            else:
+                                i.cryptoQuantity -= testing
+                                i.save()
+
                     return render(request, 'sell-crypto.html')
                 else:
                     return render(request, 'sell-crypto.html')
