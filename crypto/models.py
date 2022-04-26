@@ -6,7 +6,6 @@ class CryptoWallet(models.Model):
     user = models.ForeignKey(
             User, on_delete=models.CASCADE, null=True, blank=True)
     cryptoName = models.CharField(max_length=30)
-    quantityDollars = models.FloatField()
     cryptoQuantity = models.FloatField(blank=True, null=True)
 
     class Meta:

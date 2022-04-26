@@ -23,12 +23,10 @@
         <table id="first_table">
             <td>Name</td>
             <td>Crypto quantity</td>
-            <td>Invested</td>
             {% for i in user_cryptos %}
             <tr>
                 <td>{{ i }}</td>
                 <td>{{ i.cryptoQuantity }}</td>
-                <td>{{ i.quantityDollars }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -42,9 +40,9 @@
         </table>
         <table id="third_table">
             <td>Profit/loss</td>
-            {% for i in profit_loss %}
+            {% for k, v in profit_loss %}
             <tr>
-                <td>{{ i }}</td>
+                <td>{{ v }}</td>
             </tr>
             {% endfor %}
         </table>

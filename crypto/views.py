@@ -17,8 +17,6 @@ balances = Balance.objects.all()
 transcactions = Transaction.objects.all()
 buy_prices = BuyPrice.objects.all()
 user_cryptos_list = []
-user_profitloss_dict = {}
-profit_loss_final = []
 
 
 def get_coin_price(coin):
@@ -97,22 +95,11 @@ def wallet(request):
     user_cryptos = cryptos.filter(user=request.user)
     user_prices = buy_prices.filter(user=request.user)
 
+    profit_loss_all = {}
+
     for i in user_prices:
-        if str(i.cryptoName) not in user_profitloss_dict:
-            user_profitloss_dict[str(i.cryptoName)] = []
-
-    for j in user_prices:
-        profit_losss = j.cryptoQuantity * get_coin_price(j.cryptoName) - j.cryptoQuantity * j.price
-        user_profitloss_dict[str(j.cryptoName)].append(float(profit_losss))
-
-    for i in user_profitloss_dict:
-        z = user_profitloss_dict[i]
-        y = sum(z)
-        profit_loss_final.append(y)
-
-    for i in user_cryptos:
-        z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity - i.quantityDollars, 3)
-        profit_loss.append(z)
+        profit_loss = (i.cryptoQuantity * get_coin_price(i.cryptoName)) - (i.cryptoQuantity * i.price)
+        profit_loss_all[str(i.cryptoName)] = profit_loss
 
     for i in user_cryptos:
         z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity, 5)
@@ -129,8 +116,7 @@ def wallet(request):
         'user_cryptos': user_cryptos,
         'user_final_balance': user_final_balance,
         'user': request.user,
-        'test': user_profitloss_dict,
-        'profit_loss': profit_loss_final,
+        'profit_loss': profit_loss_all.items(),
     })
 
 
@@ -153,7 +139,6 @@ def buy_cryptos(request):
             if str(buying_coin) in user_cryptos_list:
                 y = user_cryptos.get(cryptoName=buying_coin)
                 y.cryptoQuantity += float(quantity_bought) / float(buying_coin_exchange)
-                y.quantityDollars += float(quantity_bought)
                 y.save()
                 user_balance.balance -= float(quantity_bought)
                 user_balance.save()
@@ -166,7 +151,6 @@ def buy_cryptos(request):
                 new_cryp = CryptoWallet()
                 new_cryp.user = request.user
                 new_cryp.cryptoName = buying_coin
-                new_cryp.quantityDollars = quantity_bought
                 new_cryp.cryptoQuantity = float(quantity_bought) / float(buying_coin_exchange)
                 new_cryp.save()
                 user_balance.balance -= float(quantity_bought)
@@ -192,7 +176,6 @@ def sell_cryptos(request):
             selling_coin_exchange = get_coin_price(selling_coin)
             y = user_cryptos.get(cryptoName=selling_coin)
             user_prices = buy_prices.filter(user=request.user, cryptoName=selling_coin)
-            sellingq = float(selling_quantity)
 
             for i in user_cryptos:
                 z = str(i.cryptoName)
