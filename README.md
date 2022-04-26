@@ -2,7 +2,6 @@
 Repository for python django web project using cryptocurrency API
 
 To do:
-- fix profit/loss algorithms
 - restapi
 - bootstrap
 
