@@ -192,7 +192,7 @@ def sell_cryptos(request):
             selling_coin_exchange = get_coin_price(selling_coin)
             y = user_cryptos.get(cryptoName=selling_coin)
             user_prices = buy_prices.filter(user=request.user, cryptoName=selling_coin)
-            testing = float(selling_quantity)
+            sellingq = float(selling_quantity)
 
             for i in user_cryptos:
                 z = str(i.cryptoName)
@@ -208,22 +208,17 @@ def sell_cryptos(request):
                     curr_time = datetime.now().time()
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
                         selling_quantity, selling_coin_exchange, user_final_balance)
-                        # something is not yes in this algorithm
-                    for i in user_prices:
-                        for j in user_prices[1:]:
-                            if testing > i.cryptoQuantity:
-                                testing = testing - i.cryptoQuantity
-                                i.delete()
-                                j.cryptoQuantity -= testing
-                                j.save()
-                                if testing < 0:
-                                    break
-                                else:
-                                    continue
-                            else:
-                                i.cryptoQuantity -= testing
-                                i.save()
-
+                    sellingq = float(selling_quantity)
+                    index = 0
+                    for i in range(0, len(user_prices)):
+                        if sellingq > user_prices[index].cryptoQuantity:
+                            sellingq -= user_prices[index].cryptoQuantity
+                            user_prices[index].delete()
+                            index += 1
+                        else:
+                            user_prices[index].cryptoQuantity -= sellingq
+                            user_prices[index].save()
+                            break
                     return render(request, 'sell-crypto.html')
                 else:
                     return render(request, 'sell-crypto.html')
