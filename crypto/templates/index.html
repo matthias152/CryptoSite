@@ -14,9 +14,9 @@
         {% else %}
         <a href="{% url 'login' %}">Log In</a>
         {% endif %}
-        <a href="http://127.0.0.1:8000/buy-crypto">Buy cryptos</a>
-        <a href="http://127.0.0.1:8000/sell-crypto">Sell cryptos</a>
-        <a href="http://127.0.0.1:8000/transactions">Your transactions history</a>
+        <a href="{% url 'buycryptos' %}">Buy cryptos</a>
+        <a href="{% url 'sellcryptos' %}">Sell cryptos</a>
+        <a href="{% url 'transactions' %}">Your transactions history</a>
         <a href="https://www.coingecko.com/pl" target="_blank">List of coins</a>
         <h3>{{ test }}</h3>
         <h3>Your wallet:</h3>

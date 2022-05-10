@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'crypto',
     'mathfilters',
     'crispy_forms',
+    'rest_framework',
+    'api',
 ]
 
 MIDDLEWARE = [

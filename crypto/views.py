@@ -81,10 +81,10 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
-        return ('http://127.0.0.1:8000/')
+        return ('/')
 
 
-@login_required(login_url='http://127.0.0.1:8000/login')
+@login_required(login_url='/login')
 def wallet(request):
     TRENDING_COINS = []
     current_crypto_values = []
@@ -120,7 +120,7 @@ def wallet(request):
     })
 
 
-@login_required(login_url='http://127.0.0.1:8000/login')
+@login_required(login_url='/login')
 def buy_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameBuy') and request.POST.get('quantityDollarsBuy'):
@@ -164,7 +164,7 @@ def buy_cryptos(request):
     return render(request, 'buy-crypto.html')
 
 
-@login_required(login_url='http://127.0.0.1:8000/login')
+@login_required(login_url='/login')
 def sell_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
@@ -211,7 +211,7 @@ def sell_cryptos(request):
     return render(request, 'sell-crypto.html')
 
 
-@login_required(login_url='http://127.0.0.1:8000/login')
+@login_required(login_url='/login')
 def transactions(request):
     user_transactions = transcactions.filter(user=request.user)
     return render(request, 'transactions.html', {
