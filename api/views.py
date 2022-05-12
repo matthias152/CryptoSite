@@ -2,17 +2,16 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from crypto.models import Balance, CryptoWallet, Transaction, BuyPrice, User
 from django.http import HttpResponse
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, mixins, status
 from rest_framework.response import Response
 from crypto.serializers import BalanceSerializer, CryptoWalletSerializer
 from crypto.serializers import TransactionSerializer, BuyPriceSerializer, UserSerializer
-from rest_framework import status
 
 
 class BalanceViewSet(viewsets.ViewSet):
     def list(self, request):
-        balances = Balance.objects.all()
-        serializer = BalanceSerializer(balances, many=True)
+        user_balance = Balance.objects.get(user=request.user)
+        serializer = BalanceSerializer(user_balance)
         return Response(serializer.data)
 
     def create(self, request):
@@ -24,7 +23,6 @@ class BalanceViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk=None):
-        user = self.request.user
         queryset = Balance.objects.all()
         balance = get_object_or_404(queryset, pk=pk)
 
@@ -41,41 +39,10 @@ class BalanceViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CryptoWalletViewSet(viewsets.ViewSet):
-    def list(self, request):
-        cryptos = CryptoWallet.objects.all()
-        serializer = CryptoWalletSerializer(cryptos, many=True)
-        return Response(serializer.data)
-
-    def create(self, request):
-        serializer = CryptoWalletSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def retrieve(self, request, pk=None):
-        queryset = CryptoWallet.objects.all()
-        crypto = get_object_or_404(queryset, pk=pk)
-
-        serializer = CryptoWalletSerializer(crypto)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        crypto = CryptoWallet.objects.get(pk=pk)
-        serializer = CryptoWalletSerializer(crypto, data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 class TransactionViewSet(viewsets.ViewSet):
     def list(self, request):
-        transactions = Transaction.objects.all()
-        serializer = TransactionSerializer(transactions, many=True)
+        user_transactions = Transaction.objects.filter(user=request.user)
+        serializer = TransactionSerializer(user_transactions, many=True)
         return Response(serializer.data)
 
     def create(self, request):
@@ -86,52 +53,56 @@ class TransactionViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def retrieve(self, request, pk=None):
-        queryset = Transaction.objects.all()
-        transaction = get_object_or_404(queryset, pk=pk)
 
-        serializer = TransactionSerializer(transaction)
-        return Response(serializer.data)
-
-    def update(self, request, pk=None):
-        transaction = Transaction.objects.get(pk=pk)
-        serializer = TransactionSerializer(transaction, data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class BuyPriceViewSet(viewsets.ViewSet):
+class CryptoWalletViewSet(viewsets.ViewSet):
     def list(self, request):
-        buy_prices = BuyPrice.objects.all()
-        serializer = BuyPriceSerializer(buy_prices, many=True)
+        user = self.request.user
+        cryptos = CryptoWallet.objects.filter(user=user)
+        serializer = CryptoWalletSerializer(cryptos, many=True)
         return Response(serializer.data)
 
-    def create(self, request):
-        serializer = BuyPriceSerializer(data=request.data)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class CryptoWalletDetail(generics.GenericAPIView, mixins.CreateModelMixin, mixins.ListModelMixin,
+                        mixins.UpdateModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin):
+    serializer_class = CryptoWalletSerializer
+    queryset = CryptoWallet.objects.all()
+    lookup_field = 'id'
 
-    def retrieve(self, request, pk=None):
-        queryset = BuyPrice.objects.all()
-        buyprice = get_object_or_404(queryset, pk=pk)
+    def get(self, request, id=None):
+        if id:
+            return self.retrieve(request)
+        return self.list(request)
 
-        serializer = BuyPriceSerializer(buyprice)
-        return Response(serializer.data)
+    def post(self, request):
+        return self.create(request)
 
-    def update(self, request, pk=None):
-        buyprice = BuyPrice.objects.get(pk=pk)
-        serializer = BuyPriceSerializer(buyprice, data=request.data)
+    def put(self, request, id=None):
+        return self.update(request, id)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, id=None):
+        return self.destroy(request, id)
+
+
+class BuyPriceDetail(generics.GenericAPIView, mixins.CreateModelMixin, mixins.ListModelMixin,
+                        mixins.UpdateModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin):
+    serializer_class = BuyPriceSerializer
+    queryset = BuyPrice.objects.all()
+    lookup_field = 'id'
+
+    def get(self, request, id=None):
+        if id:
+            return self.retrieve(request)
+        return self.list(request)
+
+    def post(self, request):
+        return self.create(request)
+
+    def put(self, request, id=None):
+        return self.update(request, id)
+
+    def delete(self, request, id=None):
+        return self.destroy(request, id)
+
 
 class UserViewSet(viewsets.ViewSet):
     def list(self, request):
