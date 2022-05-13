@@ -1,21 +1,30 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import BalanceViewSet, CryptoWalletViewSet, TransactionViewSet
-from .views import BuyPriceDetail, UserViewSet, CryptoWalletDetail
+from django.urls import path
+from .views import UserBalance, UserCryptoWallet, UserTransactions, UserBuyPrice
+from .views import RegisterView, BalancesView, TransactionsView
+from. views import CryptoWalletView, BuyPriceView, UsersView
 
-
-router = DefaultRouter()
-router.register('balance', BalanceViewSet, basename='balance')
-router.register('crypto', CryptoWalletViewSet, basename='crypto')
-router.register('transaction', TransactionViewSet, basename='transaction')
-router.register('user', UserViewSet, basename='user')
 
 urlpatterns = [
-    path('viewset/', include(router.urls)),
-    path('viewset/<int:pk>/', include(router.urls)),
-    path('generic/crypto/', CryptoWalletDetail.as_view()),
-    path('generic/crypto/<int:id>/', CryptoWalletDetail.as_view()),
-    path('generic/buyprice/', BuyPriceDetail.as_view()),
-    path('generic/buyprice/<int:id>/', BuyPriceDetail.as_view()),
+    #  USER
+    path('crypto/user/', UserCryptoWallet.as_view()),
+    path('crypto/user/<int:id>/', UserCryptoWallet.as_view()),
+    path('buyprice/user/', UserBuyPrice.as_view()),
+    path('buyprice/user/<int:id>/', UserBuyPrice.as_view()),
+    path('transaction/user/', UserTransactions.as_view()),
+    path('transaction/user/<int:id>', UserTransactions.as_view()),
+    path('balance/user/', UserBalance.as_view()),
+    path('balance/user/<int:id>', UserBalance.as_view()),
+    path('register/', RegisterView.as_view()),
+    #  ADMIN
+    path('users/', UsersView.as_view()),
+    path('users/<int:id>', UsersView.as_view()),
+    path('crypto/', CryptoWalletView.as_view()),
+    path('crypto/<int:id>', CryptoWalletView.as_view()),
+    path('buyprice/', BuyPriceView.as_view()),
+    path('buyprice/<int:id>', BuyPriceView.as_view()),
+    path('transaction/', TransactionsView.as_view()),
+    path('transaction/<int:id>', TransactionsView.as_view()),
+    path('balance/', BalancesView.as_view()),
+    path('balance/<int:id>', BalancesView.as_view()),
 
 ]
