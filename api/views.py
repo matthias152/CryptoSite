@@ -59,7 +59,8 @@ class UserBuyPrice(generics.GenericAPIView, mixins.CreateModelMixin, mixins.List
         return self.destroy(request, id)
 
 
-class UserTransactions(generics.GenericAPIView, mixins.CreateModelMixin, mixins.ListModelMixin):
+class UserTransactions(generics.GenericAPIView, mixins.CreateModelMixin, mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin):
     serializer_class = TransactionSerializer
     lookup_field = 'id'
 
@@ -85,13 +86,15 @@ class UserBalance(generics.GenericAPIView, mixins.CreateModelMixin, mixins.ListM
         user = self.request.user
         return Balance.objects.filter(user=user)
 
-    def get(self, request):
+    def get(self, request, id=None):
+        if id:
+            return self.retrieve(request)
         return self.list(request)
 
-    def post(self, request):
+    def post(self, request, id=None):
         return self.create(request)
 
-    def put(self, request):
+    def put(self, request, id=None):
         return self.update(request)
 
 

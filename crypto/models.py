@@ -14,15 +14,20 @@ class CryptoWallet(models.Model):
     def __str__(self):
         return f'{self.cryptoName}'
 
-
-class Balance(models.Model):
+class BuyPrice(models.Model):
     user = models.ForeignKey(
             User, on_delete=models.CASCADE, null=True, blank=True)
-    balance = models.FloatField()
+    day_created = models.DateField()
+    time_created = models.TimeField()
+    cryptoName = models.CharField(max_length=30)
+    cryptoQuantity = models.FloatField()
+    price = models.FloatField()
+
+    class Meta:
+        ordering = ['cryptoName', 'time_created', 'day_created',]
 
     def __str__(self):
-        return f'{self.user} balance'
-
+        return f'{self.cryptoName} buy'
 
 class Transaction(models.Model):
     user = models.ForeignKey(
@@ -41,18 +46,10 @@ class Transaction(models.Model):
     def __str__(self):
         return f'{self.coin} {self.type}'
 
-
-class BuyPrice(models.Model):
+class Balance(models.Model):
     user = models.ForeignKey(
             User, on_delete=models.CASCADE, null=True, blank=True)
-    day_created = models.DateField()
-    time_created = models.TimeField()
-    cryptoName = models.CharField(max_length=30)
-    cryptoQuantity = models.FloatField()
-    price = models.FloatField()
-
-    class Meta:
-        ordering = ['cryptoName', 'time_created', 'day_created',]
+    balance = models.FloatField()
 
     def __str__(self):
-        return f'{self.cryptoName} buy'
+        return f'{self.user} balance'
