@@ -9,6 +9,8 @@ django-mathfilters = "==1.0.0"
 pycoingecko = "==2.2.0"
 django-crispy-forms = "*"
 djangorestframework = "*"
+django-nose = "*"
+coverage = "*"
 
 [dev-packages]
 
