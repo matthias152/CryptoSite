@@ -6,8 +6,8 @@ urlpatterns = [
     path('', wallet),
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
-    path('buy-crypto', buy_cryptos),
-    path('sell-crypto', sell_cryptos),
-    path('register', register_request),
-    path('transactions', transactions),
+    path('buy-crypto/', buy_cryptos, name='buycryptos'),
+    path('sell-crypto/', sell_cryptos, name='sellcryptos'),
+    path('register/', register_request, name='register'),
+    path('transactions/', transactions, name='transactions'),
 ]
