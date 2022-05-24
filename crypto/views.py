@@ -89,13 +89,13 @@ def wallet(request):
     TRENDING_COINS = []
     current_crypto_values = []
     profit_loss = []
+    profit_loss_all = {}
+
     trends = coingecko.get_search_trending()['coins']
     user_balance = balances.get(user=request.user)
     user_final_balance = float(user_balance.balance)
     user_cryptos = cryptos.filter(user=request.user)
     user_prices = buy_prices.filter(user=request.user)
-
-    profit_loss_all = {}
 
     for i in user_prices:
         profit_loss = (i.cryptoQuantity * get_coin_price(i.cryptoName)) - (i.cryptoQuantity * i.price)
@@ -135,6 +135,7 @@ def buy_cryptos(request):
         for i in user_cryptos:
             z = str(i.cryptoName)
             user_cryptos_list.append(z)
+
         if float(quantity_bought) <= user_final_balance:
             if str(buying_coin) in user_cryptos_list:
                 y = user_cryptos.get(cryptoName=buying_coin)
@@ -180,6 +181,7 @@ def sell_cryptos(request):
             for i in user_cryptos:
                 z = str(i.cryptoName)
                 user_cryptos_list.append(z)
+
             if str(selling_coin) in user_cryptos_list:
                 if float(y.cryptoQuantity) >= float(selling_quantity):
                     y.cryptoQuantity -= float(selling_quantity)
