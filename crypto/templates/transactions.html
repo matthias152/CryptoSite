@@ -7,6 +7,8 @@
         <link rel="stylesheet" href="{% static 'crypto/styles/transactions.css' %}">
     </head>
     <body>
+    <h3>Do you want to download full history of transactions?</h3>
+    <a href="{% url 'pdftransactions' %}">Download</a>
         <table id="transaction-table">
             <td>Date</td>
             <td>Hour</td>

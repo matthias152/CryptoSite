@@ -11,6 +11,7 @@ django-crispy-forms = "*"
 djangorestframework = "*"
 django-nose = "*"
 coverage = "*"
+reportlab = "*"
 
 [dev-packages]
 

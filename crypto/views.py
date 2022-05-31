@@ -7,6 +7,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from datetime import date, time, datetime
+from django.http import FileResponse
+import io
+import reportlab
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
 
 
 coingecko = CoinGeckoAPI()
@@ -147,7 +153,11 @@ def buy_cryptos(request):
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
                 CollectBuyPrices(request.user, today, curr_time, buying_coin, cryptoQuantityBought, buying_coin_exchange)
-                return render(request, 'buy-crypto.html')
+                return render(request, 'success-buy.html', {
+                    "buying_coin": buying_coin,
+                    "money": quantity_bought,
+                    "cryptoQuantity": cryptoQuantityBought,
+                })
             else:
                 new_cryp = CryptoWallet()
                 new_cryp.user = request.user
@@ -160,7 +170,11 @@ def buy_cryptos(request):
                 CreateBuyTransaction(request.user, today, curr_time,
                     buying_coin, "buy", quantity_bought, buying_coin_exchange, user_final_balance)
                 CollectBuyPrices(request.user, today, curr_time, buying_coin, cryptoQuantityBought, buying_coin_exchange)
-                return render(request, 'buy-crypto.html')
+                return render(request, 'success-buy.html', {
+                    "buying_coin": buying_coin,
+                    "money": quantity_bought,
+                    "cryptoQuantity": cryptoQuantityBought
+                })
         return render(request, 'buy-crypto.html')
     return render(request, 'buy-crypto.html')
 
@@ -175,6 +189,7 @@ def sell_cryptos(request):
             selling_coin = request.POST.get('cryptoNameSell')
             selling_quantity = request.POST.get('cryptoQuantitySell')
             selling_coin_exchange = get_coin_price(selling_coin)
+            money = float(selling_quantity) * float(selling_coin_exchange)
             y = user_cryptos.get(cryptoName=selling_coin)
             user_prices = buy_prices.filter(user=request.user, cryptoName=selling_coin)
 
@@ -194,17 +209,20 @@ def sell_cryptos(request):
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
                         selling_quantity, selling_coin_exchange, user_final_balance)
                     sellingq = float(selling_quantity)
-                    index = 0
+
                     for i in range(0, len(user_prices)):
-                        if sellingq > user_prices[index].cryptoQuantity:
-                            sellingq -= user_prices[index].cryptoQuantity
-                            user_prices[index].delete()
-                            index += 1
+                        if sellingq > user_prices[i].cryptoQuantity:
+                            sellingq -= user_prices[i].cryptoQuantity
+                            user_prices[i].delete()
                         else:
-                            user_prices[index].cryptoQuantity -= sellingq
-                            user_prices[index].save()
+                            user_prices[i].cryptoQuantity -= sellingq
+                            user_prices[i].save()
                             break
-                    return render(request, 'sell-crypto.html')
+                    return render(request, 'success-sell.html', {
+                        "selling_coin": selling_coin,
+                        "selling_quantity": selling_quantity,
+                        "money": money,
+                    })
                 else:
                     return render(request, 'sell-crypto.html')
             else:
@@ -219,3 +237,32 @@ def transactions(request):
     return render(request, 'transactions.html', {
         'transactions': user_transactions,
     })
+
+
+def pdf_transactions(request):
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter, bottomup=0)
+    textob = c.beginText()
+    textob.setTextOrigin(inch, inch)
+    textob.setFont("Helvetica", 7)
+
+    lines = ["name   date          hour                   type    coin     qCoin   price    balance"]
+
+    pdftra = transcactions.filter(user=request.user)
+
+    for i in pdftra:
+        lines.append(str(i.user) + " " + str(i.day_created) + " "
+            + str(i.time_created) + " " + i.type + " " + i.coin
+            + " " + str(round(i.quantityCrypto, 3)) + " " + str(round(i.price, 3)) + " "
+            + str(round(i.balance_after, 3)))
+        lines.append(" ")
+
+    for i in lines:
+        textob.textLine(i)
+
+    c.drawText(textob)
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    return FileResponse(buf, as_attachment=True, filename='transactions.pdf')
