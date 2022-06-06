@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <link rel="stylesheet" href="{% static 'crypto/styles/index.css' %}">
+        <meta charset="utf-8">
+        <title>Crypto API</title>
+    </head>
+    <body>
+        {% block content %}
+        <h1>Hello, {{ user }}, your current balance is: {{ user_final_balance }}$</h1>
+        <a href="https://www.coingecko.com/pl" target="_blank">List of coins</a>
+        <h3>Your wallet:</h3>
+        <table class="table table-striped table-sm">
+            <td>Name</td>
+            <td>Quantity</td>
+            <td>Current Worth</td>
+            <td>Profit/loss</td>
+            {% for i, j, k, l in final_table %}
+            <tr>
+                <td>{{ i }}</td>
+                <td>{{ j }}</td>
+                <td>{{ k }}</td>
+                <td>{{ l }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <div class="container">
+            <h3>Currently trending coins: </h3>
+            {% for i in trending %}
+                <li>{{ i }}</li>
+            {% endfor %}
+        </div>
+        {% endblock content %}
+    </body>
+</html>

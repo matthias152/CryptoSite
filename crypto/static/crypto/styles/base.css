@@ -6,23 +6,13 @@ body{
     border: 1px solid;
 }
 
-#first_table{
-    display:inline-table;
-}
-
-#second_table {
-    display:inline-table;
-}
-
-#third_table {
-    display:inline-table;
-}
-
 .container {
+    position: absolute;
     width: 220px;
-    height: 230px;
+    height: 300px;
     background: #C0C0C0;
     border-color: #A9A9A9;
     border: 2px solid;
+    left: 500px;
 
 }

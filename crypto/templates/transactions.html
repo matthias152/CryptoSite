@@ -1,3 +1,4 @@
+{% extends 'base.html' %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -7,8 +8,11 @@
         <link rel="stylesheet" href="{% static 'crypto/styles/transactions.css' %}">
     </head>
     <body>
+    {% block content %}
     <h3>Do you want to download full history of transactions?</h3>
     <a href="{% url 'pdftransactions' %}">Download</a>
+    <h3>Or send an attachment to your email: </h3>
+    <a href="{% url 'emailatt' %}">Send Email</a>
         <table id="transaction-table">
             <td>Date</td>
             <td>Hour</td>
@@ -29,5 +33,6 @@
             </tr>
             {% endfor %}
         </table>
+    {% endblock content %}
     </body>
 </html>
