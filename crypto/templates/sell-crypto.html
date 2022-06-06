@@ -1,3 +1,4 @@
+{% extends 'base.html' %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
     <head>
@@ -5,6 +6,7 @@
         <title>Buy cryptos</title>
     </head>
     <body>
+    {% block content %}
         <h1>Sell coins:</h1>
         <form class="" action="" method="post">
             {% csrf_token %}
@@ -12,5 +14,6 @@
             How much of this crypto u want to sell? <input type="number" step="any" min=0 name="cryptoQuantitySell">
             <input type="submit" name="" value="Sell!">
         </form>
+    {% endblock content %}
     </body>
 </html>

@@ -138,3 +138,9 @@ NOSE_ARGS = [
     '--with-coverage',
     '--cover-package=api, crypto',
 ]
+
+# EMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp-mail.outlook.com"
+EMAIL_PORT = 587

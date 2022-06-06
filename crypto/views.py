@@ -1,33 +1,27 @@
 from django.shortcuts import render
 from pycoingecko import CoinGeckoAPI
-from .models import CryptoWallet, Balance, Transaction, BuyPrice
-from .forms import NewUserForm
 from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from datetime import date, time, datetime
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
+from django.core.mail import EmailMessage
+from django.conf import settings
+from datetime import date, datetime
 import io
-import reportlab
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
-
+from .models import CryptoWallet, Balance, Transaction, BuyPrice
+from .forms import NewUserForm
 
 coingecko = CoinGeckoAPI()
-
 today = date.today()
-cryptos = CryptoWallet.objects.all()
-balances = Balance.objects.all()
-transcactions = Transaction.objects.all()
-buy_prices = BuyPrice.objects.all()
-user_cryptos_list = []
 
 
 def get_coin_price(coin):
-    c = coingecko.get_price(ids=str(coin).lower(), vs_currencies='usd')[str(coin).lower()]['usd']
-    return float(c)
+    coin_price = coingecko.get_price(ids=str(coin).lower(), vs_currencies='usd')[str(coin).lower()]['usd']
+    return float(coin_price)
 
 
 def CreateBuyTransaction(user, day, time, bcoin, type, qb, bce, ufb):
@@ -74,7 +68,7 @@ def register_request(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
-            return render(request, 'index.html')
+            return render(request, 'wallet.html')
         messages.error(request, "Unsuccessful registration. Invalid information.")
     form = NewUserForm()
     return render(
@@ -92,16 +86,16 @@ class CustomLoginView(LoginView):
 
 @login_required(login_url='/login')
 def wallet(request):
-    TRENDING_COINS = []
+
+    trending_coins = []
     current_crypto_values = []
-    profit_loss = []
     profit_loss_all = {}
 
     trends = coingecko.get_search_trending()['coins']
-    user_balance = balances.get(user=request.user)
+    user_balance = Balance.objects.get(user=request.user)
     user_final_balance = float(user_balance.balance)
-    user_cryptos = cryptos.filter(user=request.user)
-    user_prices = buy_prices.filter(user=request.user)
+    user_cryptos = CryptoWallet.objects.filter(user=request.user)
+    user_prices = BuyPrice.objects.filter(user=request.user)
 
     for i in user_prices:
         profit_loss = (i.cryptoQuantity * get_coin_price(i.cryptoName)) - (i.cryptoQuantity * i.price)
@@ -113,16 +107,26 @@ def wallet(request):
 
     for i in range(7):
         coin = trends[i]['item']['name']
-        TRENDING_COINS.append(coin)
+        trending_coins.append(coin)
 
-    return render(request, "index.html", {
-        'trending': TRENDING_COINS,
-        'ALL_CRYPTOS': cryptos,
-        'current_crypto_values': current_crypto_values,
-        'user_cryptos': user_cryptos,
+    # CREATING FINAL TABLE
+    names = []
+    quantities = []
+    values = profit_loss_all.values()
+    values_list = list(values)
+
+    for i in user_cryptos:
+        names.append(i.cryptoName)
+        quantities.append(i.cryptoQuantity)
+
+    final_table = zip(names, quantities, current_crypto_values, values_list)
+    ###
+
+    return render(request, "wallet.html", {
+        'trending': trending_coins,
         'user_final_balance': user_final_balance,
         'user': request.user,
-        'profit_loss': profit_loss_all.items(),
+        'final_table': final_table,
     })
 
 
@@ -130,13 +134,16 @@ def wallet(request):
 def buy_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameBuy') and request.POST.get('quantityDollarsBuy'):
-            user_balance = balances.get(user=request.user)
-            user_final_balance = float(user_balance.balance)
-            user_cryptos = cryptos.filter(user=request.user)
             buying_coin = request.POST.get('cryptoNameBuy', None)
-            buying_coin_exchange = get_coin_price(buying_coin)
             quantity_bought = request.POST.get('quantityDollarsBuy')
+
+            user_balance = Balance.objects.get(user=request.user)
+            user_cryptos = CryptoWallet.objects.filter(user=request.user)
+            user_final_balance = float(user_balance.balance)
+
+            buying_coin_exchange = get_coin_price(buying_coin)
             cryptoQuantityBought = float(quantity_bought) / float(buying_coin_exchange)
+            user_cryptos_list = []
 
         for i in user_cryptos:
             z = str(i.cryptoName)
@@ -183,15 +190,18 @@ def buy_cryptos(request):
 def sell_cryptos(request):
     if request.method == 'POST':
         if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
-            user_balance = balances.get(user=request.user)
-            user_final_balance = float(user_balance.balance)
-            user_cryptos = cryptos.filter(user=request.user)
             selling_coin = request.POST.get('cryptoNameSell')
             selling_quantity = request.POST.get('cryptoQuantitySell')
+
+            user_balance = Balance.objects.get(user=request.user)
+            user_cryptos = CryptoWallet.objects.filter(user=request.user)
+            user_prices = BuyPrice.objects.filter(user=request.user, cryptoName=selling_coin)
+            user_final_balance = float(user_balance.balance)
+
             selling_coin_exchange = get_coin_price(selling_coin)
             money = float(selling_quantity) * float(selling_coin_exchange)
             y = user_cryptos.get(cryptoName=selling_coin)
-            user_prices = buy_prices.filter(user=request.user, cryptoName=selling_coin)
+            user_cryptos_list = []
 
             for i in user_cryptos:
                 z = str(i.cryptoName)
@@ -232,8 +242,8 @@ def sell_cryptos(request):
 
 
 @login_required(login_url='/login')
-def transactions(request):
-    user_transactions = transcactions.filter(user=request.user)
+def transactions_history(request):
+    user_transactions = Transaction.objects.filter(user=request.user)
     return render(request, 'transactions.html', {
         'transactions': user_transactions,
     })
@@ -248,7 +258,7 @@ def pdf_transactions(request):
 
     lines = ["name   date          hour                   type    coin     qCoin   price    balance"]
 
-    pdftra = transcactions.filter(user=request.user)
+    pdftra = Transaction.objects.filter(user=request.user)
 
     for i in pdftra:
         lines.append(str(i.user) + " " + str(i.day_created) + " "
@@ -266,3 +276,43 @@ def pdf_transactions(request):
     buf.seek(0)
 
     return FileResponse(buf, as_attachment=True, filename='transactions.pdf')
+
+
+def pdf_transactions_email(request):
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter, bottomup=0)
+    textob = c.beginText()
+    textob.setTextOrigin(inch, inch)
+    textob.setFont("Helvetica", 7)
+
+    lines = ["name   date          hour                   type    coin     qCoin   price    balance"]
+
+    pdftra = Transaction.objects.filter(user=request.user)
+
+    for i in pdftra:
+        lines.append(str(i.user) + " " + str(i.day_created) + " "
+            + str(i.time_created) + " " + i.type + " " + i.coin
+            + " " + str(round(i.quantityCrypto, 3)) + " " + str(round(i.price, 3)) + " "
+            + str(round(i.balance_after, 3)))
+        lines.append(" ")
+
+    for i in lines:
+        textob.textLine(i)
+
+    c.drawText(textob)
+    c.showPage()
+    c.save()
+    buf.seek(0)
+    z = buf.getvalue()
+    buf.close()
+
+
+    subject = "Testing ReportLab PDF Mail"
+    message = "PDF Attached Below"
+    emails = ["mat.kleska@gmail.com"]
+    mail = EmailMessage(subject, message, settings.EMAIL_HOST_USER, emails)
+    mail.attach('generated.pdf', z, 'application/pdf')
+
+
+    mail.send(fail_silently = False)
+    return HttpResponse("Mail Sent")
