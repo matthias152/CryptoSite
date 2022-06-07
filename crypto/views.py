@@ -303,16 +303,17 @@ def pdf_transactions_email(request):
     c.showPage()
     c.save()
     buf.seek(0)
-    z = buf.getvalue()
+    pdf_to_email = buf.getvalue()
     buf.close()
 
+    subject = "CryptoSite transactions"
+    message = "Hello, below is PDF file with your history of transactions."
 
-    subject = "Testing ReportLab PDF Mail"
-    message = "PDF Attached Below"
-    emails = ["mat.kleska@gmail.com"]
+    user = request.user
+    usermail = str(user.email)
+    emails = [usermail]
     mail = EmailMessage(subject, message, settings.EMAIL_HOST_USER, emails)
-    mail.attach('generated.pdf', z, 'application/pdf')
-
+    mail.attach('generated.pdf', pdf_to_email, 'application/pdf')
 
     mail.send(fail_silently = False)
-    return HttpResponse("Mail Sent")
+    return render(request, 'email-success.html')
