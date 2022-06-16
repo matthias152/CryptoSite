@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+    {% block content %}
+    <form class="" action="" method="post">
+        {% csrf_token %}
+        How much you want to deposit? <input type="text" name="addBalanceFunds">
+        <input type="submit" name="" value="Deposit!">
+    </form>
+    {% endblock content %}
+    </body>
+</html>

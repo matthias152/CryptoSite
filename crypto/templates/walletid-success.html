@@ -7,7 +7,8 @@
     </head>
     <body>
         {% block content %}
-        <h1>PDF file has been successfully sent to your email!</h1>
+        <h2>You have successfully generated your Wallet ID. It's: {{ walletid }}</h2>
+        <h2>You can find it in <a href="{% url 'userprofile' %}">your profile</a></h2>
         {% endblock content %}
     </body>
 </html>

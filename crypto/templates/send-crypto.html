@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        {% block content %}
+        <h1>Send cryptos</h1>
+        <form class="" action="" method="post">
+            {% csrf_token %}
+            Crypto name: <input type="text" name="cryptoName">
+            Crypto quantity: <input type="text" name="cryptoQuantity">
+            WalletID: <input type="text" name="walletID">
+            <input type="submit" name="" value="Send!">
+        </form>
+        {% endblock content %}
+    </body>
+</html>

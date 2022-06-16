@@ -9,29 +9,62 @@
     </head>
     <body>
     {% block content %}
-    <h3>Do you want to download full history of transactions?</h3>
+    <h3>Do you want to download full history of crypto transactions?</h3>
     <a href="{% url 'pdftransactions' %}">Download</a>
     <h3>Or send an attachment to your email: </h3>
     <a href="{% url 'emailatt' %}">Send Email</a>
-        <table id="transaction-table">
+    <h2>Your crypto transactions: </h2>
+        <table>
             <td>Date</td>
             <td>Hour</td>
             <td>Operation</td>
-            <td>Name</td>
-            <td>CryptoQuantity</td>
+            <td>Crypto</td>
+            <td>Amount</td>
             <td>Price</td>
             <td>Balance</td>
             {% for i in transactions %}
             <tr>
-                <td>{{i.day_created}}</td>
-                <td>{{i.time_created}}</td>
-                <td>{{i.type}}</td>
-                <td>{{i.coin}}</td>
-                <td>{{i.quantityCrypto}}</td>
-                <td>{{i.price}}</td>
-                <td>{{i.balance_after}}</td>
+                <td>{{ i.day_created }}</td>
+                <td>{{ i.time_created }}</td>
+                <td>{{ i.type }}</td>
+                <td>{{ i.coin }}</td>
+                <td>{{ i.quantityCrypto }}</td>
+                <td>{{ i.price }}</td>
+                <td>{{ i.balance_after }}</td>
             </tr>
             {% endfor %}
+        </table>
+        <h2>Your sends and receives: </h2>
+        <table>
+            <td>Date</td>
+            <td>Time</td>
+            <td>Operation</td>
+            <td>Crypto</td>
+            <td>Amount</td>
+            {% for i in send_receive %}
+            <tr>
+                <td>{{ i.day_created }}</td>
+                <td>{{ i.time_created }}</td>
+                <td>{{ i.type }}</td>
+                <td>{{ i.cryptoName }}</td>
+                <td>{{ i.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <h2>Your deposits and withdrawals:</h2>
+        <table>
+            <td>Date</td>
+            <td>Hour</td>
+            <td>Operation</td>
+            <td>Amount</td>
+        {% for i in deposit_withdraw %}
+        <tr>
+            <td>{{ i.day_created }}</td>
+            <td>{{ i.time_created }}</td>
+            <td>{{ i.type }}</td>
+            <td>{{ i.quantity }}</td>
+        </tr>
+        {% endfor %}
         </table>
     {% endblock content %}
     </body>
