@@ -4,16 +4,20 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse
 from django.core.mail import EmailMessage
 from django.conf import settings
 from datetime import date, datetime
 import io
+import random
+import string
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
-from .models import CryptoWallet, Balance, Transaction, BuyPrice
+from .models import CryptoWallet, Balance, Transaction, BuyPrice, WalletID
+from .models import DepositWithdraw_Transaction, SendReceive_Transaction
 from .forms import NewUserForm
+
 
 coingecko = CoinGeckoAPI()
 today = date.today()
@@ -61,6 +65,27 @@ def CollectBuyPrices(user, day, time, crypto, cq, price):
     bPrice.save()
 
 
+def CreateDepositWithdrawTransaction(user, day, time, type, quantity):
+    new_transaction = DepositWithdraw_Transaction()
+    new_transaction.user = user
+    new_transaction.day_created = day
+    new_transaction.time_created = time
+    new_transaction.type = type
+    new_transaction.quantity = quantity
+    new_transaction.save()
+
+
+def CreateSendReceiveTransaction(user, day, time, type, name, quantity):
+    new_transaction = SendReceive_Transaction()
+    new_transaction.user = user
+    new_transaction.day_created = day
+    new_transaction.time_created = time
+    new_transaction.type = type
+    new_transaction.cryptoName = name
+    new_transaction.quantity = quantity
+    new_transaction.save()
+
+
 def register_request(request):
     if request.method == 'POST':
         form = NewUserForm(request.POST)
@@ -87,13 +112,16 @@ class CustomLoginView(LoginView):
 @login_required(login_url='/login')
 def wallet(request):
 
-    trending_coins = []
     current_crypto_values = []
     profit_loss_all = {}
 
-    trends = coingecko.get_search_trending()['coins']
-    user_balance = Balance.objects.get(user=request.user)
-    user_final_balance = float(user_balance.balance)
+    try:
+        user_balance = Balance.objects.get(user=request.user)
+        user_final_balance = float(user_balance.balance)
+    except:
+        user_balance = False
+        user_final_balance = 0
+
     user_cryptos = CryptoWallet.objects.filter(user=request.user)
     user_prices = BuyPrice.objects.filter(user=request.user)
 
@@ -105,15 +133,12 @@ def wallet(request):
         z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity, 5)
         current_crypto_values.append(z)
 
-    for i in range(7):
-        coin = trends[i]['item']['name']
-        trending_coins.append(coin)
-
     # CREATING FINAL TABLE
     names = []
     quantities = []
     values = profit_loss_all.values()
     values_list = list(values)
+    portfolio_summary = sum(current_crypto_values)
 
     for i in user_cryptos:
         names.append(i.cryptoName)
@@ -123,10 +148,11 @@ def wallet(request):
     ###
 
     return render(request, "wallet.html", {
-        'trending': trending_coins,
+        'user_balance': user_balance,
         'user_final_balance': user_final_balance,
         'user': request.user,
         'final_table': final_table,
+        'values_summary': portfolio_summary,
     })
 
 
@@ -242,11 +268,141 @@ def sell_cryptos(request):
 
 
 @login_required(login_url='/login')
+def send_crypto(request):
+    if request.method == 'POST':
+        if request.POST.get('cryptoName') and request.POST.get('cryptoQuantity') and request.POST.get('walletID'):
+
+            sending_coin = request.POST.get('cryptoName')
+            sending_coin_quantity = request.POST.get('cryptoQuantity')
+            sending_walletid = request.POST.get('walletID')
+            curr_time = datetime.now().time()
+
+            sender_crypto = CryptoWallet.objects.get(user=request.user, cryptoName=str(sending_coin))
+
+            receiver_wallet = WalletID.objects.get(unique_id=sending_walletid)
+
+            try:
+                receiver_crypto = CryptoWallet.objects.get(user=receiver_wallet.user, cryptoName=sending_coin)
+            except:
+                receiver_crypto = False
+
+            if sender_crypto.cryptoQuantity > float(sending_coin_quantity):
+                if receiver_crypto:
+                    sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
+                    sender_crypto.save()
+                    CreateSendReceiveTransaction(request.user, today, curr_time,
+                        "send", sending_coin, sending_coin_quantity)
+                    receiver_crypto.cryptoQuantity += float(sending_coin_quantity)
+                    receiver_crypto.save()
+                    CreateSendReceiveTransaction(receiver_wallet.user, today,
+                        curr_time, "receive", sending_coin, sending_coin_quantity)
+                else:
+                    sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
+                    sender_crypto.save()
+                    CreateSendReceiveTransaction(request.user, today, curr_time,
+                        "send", sending_coin, sending_coin_quantity)
+                    new_crypto = CryptoWallet()
+                    new_crypto.user = receiver_wallet.user
+                    new_crypto.cryptoName = sending_coin
+                    new_crypto.cryptoQuantity = float(sending_coin_quantity)
+                    new_crypto.save()
+                    CreateSendReceiveTransaction(receiver_wallet.user, today,
+                        curr_time, "receive", sending_coin, sending_coin_quantity)
+                return render(request, 'success-send.html', {
+                    'sending_coin': sending_coin,
+                    'sending_coin_quantity': sending_coin_quantity,
+                    'walletid': sending_walletid,
+                })
+            else:
+                return render(request, 'send-crypto.html')
+        return render(request, 'send-crypto.html')
+    return render(request, 'send-crypto.html')
+
+
+@login_required(login_url='/login')
+def user_profile(request):
+    username = request.user.username
+    user_email = request.user.email
+    user_balance = Balance.objects.get(user=request.user)
+    user_final_balance = float(user_balance.balance)
+    user_cryptos = CryptoWallet.objects.filter(user=request.user)
+    portfolio_summary_list = []
+    user_walletid = WalletID.objects.filter(user=request.user)
+
+    for i in user_cryptos:
+        z = round(get_coin_price(i.cryptoName) * i.cryptoQuantity, 5)
+        portfolio_summary_list.append(z)
+
+    portfolio_summary = sum(portfolio_summary_list)
+
+    return render(request, 'userprofile.html',{
+        'username': username,
+        'user_email': user_email,
+        'user_balance': user_final_balance,
+        'user_portfolio': portfolio_summary,
+        'user_walletid': user_walletid,
+    })
+
+
+@login_required(login_url='/login')
 def transactions_history(request):
     user_transactions = Transaction.objects.filter(user=request.user)
+    user_deposit_withdraw_transactions = DepositWithdraw_Transaction.objects.filter(user=request.user)
+    user_sendreceive_transactions = SendReceive_Transaction.objects.filter(user=request.user)
+
     return render(request, 'transactions.html', {
         'transactions': user_transactions,
+        'deposit_withdraw': user_deposit_withdraw_transactions,
+        'send_receive': user_sendreceive_transactions,
     })
+
+
+@login_required(login_url='/login')
+def deposit(request):
+    if request.method == 'POST':
+        if request.POST.get('addBalanceFunds'):
+            balance_add = request.POST.get('addBalanceFunds')
+            curr_time = datetime.now().time()
+
+            try:
+                balance_check = Balance.objects.get(user=request.user)
+            except:
+                balance_check = False
+
+            if balance_check:
+                balance_check.balance += float(balance_add)
+                balance_check.save()
+                CreateDepositWithdrawTransaction(request.user, today, curr_time, "deposit", balance_add)
+            else:
+                new_balance = Balance()
+                new_balance.user = request.user
+                new_balance.balance = balance_add
+                new_balance.save()
+                CreateDepositWithdrawTransaction(request.user, today, curr_time, "deposit", balance_add)
+            return render(request, 'balance-success.html', {
+                'balance_suc': balance_add,
+            })
+    return render(request, 'balance-add.html')
+
+
+@login_required(login_url='/login')
+def generate_walletid(request):
+    if request.method == 'POST':
+        z = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=25))
+        new_wallet_id = WalletID()
+        new_wallet_id.user = request.user
+        new_wallet_id.unique_id = z
+        new_wallet_id.save()
+        return render(request, 'walletid-success.html', {
+            'walletid': z
+        })
+
+    user_walletid = WalletID.objects.filter(user=request.user)
+
+    return render(request, 'generate-walletid.html', {
+        'user_walletid': user_walletid,
+    })
+
 
 
 def pdf_transactions(request):

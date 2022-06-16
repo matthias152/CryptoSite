@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        {% block content %}
+        <h2>Username: {{ username }}</h2>
+        <h2>Email: {{ user_email }}</h2>
+        <h2>Balance: {{ user_balance }}</h2>
+        <h2>Portfolio balance: {{ user_portfolio }}</h2>
+        {% if user_walletid %}
+        {% for i in user_walletid %}
+        <h2>Wallet ID: {{ i.unique_id }}</h2>
+        {% endfor %}
+        {% else %}
+        <h2>Wallet ID: Looks like you don't have an WalletID yet.</h2>
+        <a href="{% url 'generatewalletid' %}">Generate one!</a>
+        {% endif %}
+        {% endblock content %}
+    </body>
+</html>
