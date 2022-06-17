@@ -1,7 +1,13 @@
 body{
-    background-color: gray;
+    background-color: white;
 }
 
 .tr, th, td {
     border: 1px solid;
+}
+
+#coins-btn {
+    position: fixed;
+    right: 10px;
+    bottom: -4px;
 }

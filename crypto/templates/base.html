@@ -12,16 +12,17 @@
     <body>
         <nav class="navbar navbar-light bg-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'wallet' %}">CryptoSite</a>
-            <a href="{% url 'wallet' %}">Your Wallet</a>
-            <a href="{% url 'buycryptos' %}">Buy Cryptos</a>
-            <a href="{% url 'sellcryptos' %}">Sell Cryptos</a>
-            <a href="{% url 'sendcryptos' %}">Send Crypto</a>
-            <a href="{% url 'transactions' %}">Transactions</a>
-            <a href="{% url 'userprofile' %}">Profile</a>
-            <a href="{% url 'logout' %}">Log Out</a>
+            <a class="navbar-brand btn btn-primary" href="{% url 'wallet' %}">CryptoSite</a>
+            <a class="nav-link" href="{% url 'wallet' %}">Your Wallet</a>
+            <a class="nav-link" href="{% url 'buycryptos' %}">Buy Cryptos</a>
+            <a class="nav-link" href="{% url 'sellcryptos' %}">Sell Cryptos</a>
+            <a class="nav-link" href="{% url 'sendcryptos' %}">Send Crypto</a>
+            <a class="nav-link" href="{% url 'transactions' %}">Transactions</a>
+            <a class="nav-link" href="{% url 'userprofile' %}">Profile</a>
+            <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
           </div>
         </nav>
+        <a id="coins-btn" class="btn btn-success" href="https://www.coingecko.com/pl" target="_blank">COINS</a>
         {% block content %}{% endblock content %}
     </body>
 </html>

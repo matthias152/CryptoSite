@@ -1,3 +1,4 @@
+{% extends 'base.html'%}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
     <head>
@@ -5,18 +6,16 @@
         <title></title>
     </head>
     <body>
-        <div class="header-bar">
-            <h1>Login</h1>
-        </div>
-        <div class="card-body">
+        {% block content %}
+        <div class="container py-5 border">
             <form class="" action="" method="post">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <input class="button" type="submit" name="" value="Login">
+                <input class="btn btn-primary" type="submit" name="" value="Login">
             </form>
             <h3>Dont have an account?</h3>
             <a href="{% url 'register' %}">Register</a>
-
         </div>
+        {% endblock content %}
     </body>
 </html>
