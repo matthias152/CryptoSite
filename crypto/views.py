@@ -149,10 +149,10 @@ def wallet(request):
 
     return render(request, "wallet.html", {
         'user_balance': user_balance,
-        'user_final_balance': user_final_balance,
+        'user_final_balance': round(user_final_balance, 2),
         'user': request.user,
         'final_table': final_table,
-        'values_summary': portfolio_summary,
+        'values_summary': round(portfolio_summary, 2),
     })
 
 
@@ -276,8 +276,10 @@ def send_crypto(request):
             sending_coin_quantity = request.POST.get('cryptoQuantity')
             sending_walletid = request.POST.get('walletID')
             curr_time = datetime.now().time()
+            fl_send = float(sending_coin_quantity)
 
             sender_crypto = CryptoWallet.objects.get(user=request.user, cryptoName=str(sending_coin))
+            sender_buyprices = BuyPrice.objects.filter(user=request.user, cryptoName=sending_coin)
 
             receiver_wallet = WalletID.objects.get(unique_id=sending_walletid)
 
@@ -296,6 +298,15 @@ def send_crypto(request):
                     receiver_crypto.save()
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
+
+                    for i in range(0, len(sender_buyprices)):
+                        if fl_send > sender_buyprices[i].cryptoQuantity:
+                            fl_send -= sender_buyprices[i].cryptoQuantity
+                            sender_buyprices[i].delete()
+                        else:
+                            sender_buyprices[i].cryptoQuantity -= fl_send
+                            sender_buyprices[i].save()
+                            break
                 else:
                     sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
                     sender_crypto.save()
@@ -308,6 +319,15 @@ def send_crypto(request):
                     new_crypto.save()
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
+
+                    for i in range(0, len(sender_buyprices)):
+                        if fl_send > sender_buyprices[i].cryptoQuantity:
+                            fl_send -= sender_buyprices[i].cryptoQuantity
+                            sender_buyprices[i].delete()
+                        else:
+                            sender_buyprices[i].cryptoQuantity -= fl_send
+                            sender_buyprices[i].save()
+                            break
                 return render(request, 'success-send.html', {
                     'sending_coin': sending_coin,
                     'sending_coin_quantity': sending_coin_quantity,
@@ -323,8 +343,12 @@ def send_crypto(request):
 def user_profile(request):
     username = request.user.username
     user_email = request.user.email
-    user_balance = Balance.objects.get(user=request.user)
-    user_final_balance = float(user_balance.balance)
+    try:
+        user_balance = Balance.objects.get(user=request.user)
+        user_final_balance = float(user_balance.balance)
+    except:
+        user_balance = False
+        user_final_balance = 0
     user_cryptos = CryptoWallet.objects.filter(user=request.user)
     portfolio_summary_list = []
     user_walletid = WalletID.objects.filter(user=request.user)

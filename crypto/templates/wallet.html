@@ -4,22 +4,26 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
     <head>
-        <link rel="stylesheet" href="{% static 'crypto/styles/index.css' %}">
+        <link rel="stylesheet" href="{% static 'crypto/styles/wallet.css' %}">
         <meta charset="utf-8">
         <title>Crypto API</title>
     </head>
     <body>
         {% block content %}
         {% if user_balance %}
-        <h1>Hello, {{ user }}, your current balance is: {{ user_final_balance }}$</h1>
-        <a href="{% url 'deposit' %}">Add More Funds!</a>
+        <div class="container-sm border">
+        <h1>Hello, {{ user }}!</h1>
+        <h2>Balance: {{ user_final_balance }}$</h2>
+        <h2>Portfolio balance: {{ values_summary }}$</h2>
+        <a class="btn btn-primary" href="{% url 'deposit' %}">Add More Funds!</a>
+        </div>
         {% else %}
+        <div class="container-sm border">
         <h1>Hello, {{ user }} make your first deposit!</h1>
-        <a href="{% url 'deposit' %}">Add Funds!</a>
+        <a class="btn btn-primary" href="{% url 'deposit' %}">Add Funds!</a>
+        </div>
         {% endif %}
-        <h1>Your portfolio: {{ values_summary }}</h1>
-        <a href="https://www.coingecko.com/pl" target="_blank">List of coins</a>
-        <h3>Your wallet:</h3>
+        <h3>Wallet:</h3>
         <table class="table table-striped table-sm">
             <td>Name</td>
             <td>Quantity</td>

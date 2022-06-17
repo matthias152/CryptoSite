@@ -10,9 +10,9 @@
     <body>
     {% block content %}
     <h3>Do you want to download full history of crypto transactions?</h3>
-    <a href="{% url 'pdftransactions' %}">Download</a>
-    <h3>Or send an attachment to your email: </h3>
-    <a href="{% url 'emailatt' %}">Send Email</a>
+    <a class="btn btn-primary" href="{% url 'pdftransactions' %}">Download</a>
+    <h3>Or send as an attachment to your email: </h3>
+    <a class="btn btn-primary" href="{% url 'emailatt' %}">Send Email</a>
     <h2>Your crypto transactions: </h2>
         <table>
             <td>Date</td>
