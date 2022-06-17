@@ -1,5 +1,5 @@
 # CryptoSite
-It's project of website that can be used as investing simulator for crypto currencies.
+It's website that can be used as investing simulator for crypto currencies.
 
 ## How to run
 Clone the project using the command "git clone https://github.com/matthias152/CryptoSite"
