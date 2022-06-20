@@ -54,17 +54,6 @@ def CreateSellTransaction(user, day, time, scoin, type, sq, sce, ufb):
     new_transaction.save()
 
 
-def CollectBuyPrices(user, day, time, crypto, cq, price):
-    bPrice = BuyPrice()
-    bPrice.user = user
-    bPrice.day_created = day
-    bPrice.time_created = time
-    bPrice.cryptoName = crypto
-    bPrice.cryptoQuantity = cq
-    bPrice.price = price
-    bPrice.save()
-
-
 def CreateDepositWithdrawTransaction(user, day, time, type, quantity):
     new_transaction = DepositWithdraw_Transaction()
     new_transaction.user = user
@@ -86,6 +75,37 @@ def CreateSendReceiveTransaction(user, day, time, type, name, quantity):
     new_transaction.save()
 
 
+def CollectBuyPrices(user, day, time, crypto, cq, price):
+    bPrice = BuyPrice()
+    bPrice.user = user
+    bPrice.day_created = day
+    bPrice.time_created = time
+    bPrice.cryptoName = crypto
+    bPrice.cryptoQuantity = cq
+    bPrice.price = price
+    bPrice.save()
+
+
+def DeleteBuyPrices(buyprices, quantity):
+    for i in range(0, len(buyprices)):
+        if quantity > buyprices[i].cryptoQuantity:
+            quantity -= buyprices[i].cryptoQuantity
+            buyprices[i].delete()
+        else:
+            buyprices[i].cryptoQuantity -= quantity
+            buyprices[i].save()
+            break
+
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    fields = '__all__'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return ('/')
+
+
 def register_request(request):
     if request.method == 'POST':
         form = NewUserForm(request.POST)
@@ -98,15 +118,6 @@ def register_request(request):
     form = NewUserForm()
     return render(
         request=request, template_name="register.html", context={"register_form": form})
-
-
-class CustomLoginView(LoginView):
-    template_name = 'login.html'
-    fields = '__all__'
-    redirect_authenticated_user = True
-
-    def get_success_url(self):
-        return ('/')
 
 
 @login_required(login_url='/login')
@@ -218,42 +229,32 @@ def sell_cryptos(request):
         if request.POST.get('cryptoNameSell') and request.POST.get('cryptoQuantitySell'):
             selling_coin = request.POST.get('cryptoNameSell')
             selling_quantity = request.POST.get('cryptoQuantitySell')
+            selling_quantity_float = float(selling_quantity)
 
             user_balance = Balance.objects.get(user=request.user)
-            user_cryptos = CryptoWallet.objects.filter(user=request.user)
             user_prices = BuyPrice.objects.filter(user=request.user, cryptoName=selling_coin)
             user_final_balance = float(user_balance.balance)
 
             selling_coin_exchange = get_coin_price(selling_coin)
             money = float(selling_quantity) * float(selling_coin_exchange)
-            y = user_cryptos.get(cryptoName=selling_coin)
-            user_cryptos_list = []
 
-            for i in user_cryptos:
-                z = str(i.cryptoName)
-                user_cryptos_list.append(z)
+            try:
+                user_crypto = CryptoWallet.objects.get(user=request.user, cryptoName=selling_coin)
+            except:
+                user_crypto = False
 
-            if str(selling_coin) in user_cryptos_list:
-                if float(y.cryptoQuantity) >= float(selling_quantity):
-                    y.cryptoQuantity -= float(selling_quantity)
-                    y.save()
-                    if y.cryptoQuantity == 0:
-                        y.delete()
+            if user_crypto:
+                if float(user_crypto.cryptoQuantity) >= float(selling_quantity):
+                    user_crypto.cryptoQuantity -= float(selling_quantity)
+                    user_crypto.save()
+                    if user_crypto.cryptoQuantity == 0:
+                        user_crypto.delete()
                     user_balance.balance += float(selling_quantity) * float(selling_coin_exchange)
                     user_balance.save()
                     curr_time = datetime.now().time()
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
                         selling_quantity, selling_coin_exchange, user_final_balance)
-                    sellingq = float(selling_quantity)
-
-                    for i in range(0, len(user_prices)):
-                        if sellingq > user_prices[i].cryptoQuantity:
-                            sellingq -= user_prices[i].cryptoQuantity
-                            user_prices[i].delete()
-                        else:
-                            user_prices[i].cryptoQuantity -= sellingq
-                            user_prices[i].save()
-                            break
+                    DeleteBuyPrices(user_prices, selling_quantity_float)
                     return render(request, 'success-sell.html', {
                         "selling_coin": selling_coin,
                         "selling_quantity": selling_quantity,
@@ -276,7 +277,7 @@ def send_crypto(request):
             sending_coin_quantity = request.POST.get('cryptoQuantity')
             sending_walletid = request.POST.get('walletID')
             curr_time = datetime.now().time()
-            fl_send = float(sending_coin_quantity)
+            sending_quantity_float = float(sending_coin_quantity)
 
             sender_crypto = CryptoWallet.objects.get(user=request.user, cryptoName=str(sending_coin))
             sender_buyprices = BuyPrice.objects.filter(user=request.user, cryptoName=sending_coin)
@@ -288,7 +289,7 @@ def send_crypto(request):
             except:
                 receiver_crypto = False
 
-            if sender_crypto.cryptoQuantity > float(sending_coin_quantity):
+            if sender_crypto.cryptoQuantity >= float(sending_coin_quantity):
                 if receiver_crypto:
                     sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
                     sender_crypto.save()
@@ -296,17 +297,12 @@ def send_crypto(request):
                         "send", sending_coin, sending_coin_quantity)
                     receiver_crypto.cryptoQuantity += float(sending_coin_quantity)
                     receiver_crypto.save()
+
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
+                    DeleteBuyPrices(sender_buyprices, sending_quantity_float)
+                    CollectBuyPrices(receiver_wallet.user, today, curr_time, sending_coin, 0, 0)
 
-                    for i in range(0, len(sender_buyprices)):
-                        if fl_send > sender_buyprices[i].cryptoQuantity:
-                            fl_send -= sender_buyprices[i].cryptoQuantity
-                            sender_buyprices[i].delete()
-                        else:
-                            sender_buyprices[i].cryptoQuantity -= fl_send
-                            sender_buyprices[i].save()
-                            break
                 else:
                     sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
                     sender_crypto.save()
@@ -317,17 +313,12 @@ def send_crypto(request):
                     new_crypto.cryptoName = sending_coin
                     new_crypto.cryptoQuantity = float(sending_coin_quantity)
                     new_crypto.save()
+
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
+                    DeleteBuyPrices(sender_buyprices, sending_quantity_float)
+                    CollectBuyPrices(receiver_wallet.user, today, curr_time, sending_coin, 0, 0)
 
-                    for i in range(0, len(sender_buyprices)):
-                        if fl_send > sender_buyprices[i].cryptoQuantity:
-                            fl_send -= sender_buyprices[i].cryptoQuantity
-                            sender_buyprices[i].delete()
-                        else:
-                            sender_buyprices[i].cryptoQuantity -= fl_send
-                            sender_buyprices[i].save()
-                            break
                 return render(request, 'success-send.html', {
                     'sending_coin': sending_coin,
                     'sending_coin_quantity': sending_coin_quantity,
