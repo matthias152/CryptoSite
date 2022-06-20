@@ -21,4 +21,4 @@ It's using CoinGecko's API for checking the current exchange of cryptos.
 Website contains buying, selling, sending cryptos to other users, tracking the current profit/loss and history of transactions.  
 There is also API created with django-restframework.
 
-![](cryptosite2.png "cryptosite")
+![](crypto/static/cryptosite2.png "cryptosite")
