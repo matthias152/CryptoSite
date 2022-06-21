@@ -86,7 +86,7 @@ def CollectBuyPrices(user, day, time, crypto, cq, price):
     bPrice.save()
 
 
-def DeleteBuyPrices(buyprices, quantity):
+def DeleteBuyPrices(buyprices, quantity, user, cryptoname, day, time):
     for i in range(0, len(buyprices)):
         if quantity > buyprices[i].cryptoQuantity:
             quantity -= buyprices[i].cryptoQuantity
@@ -95,6 +95,14 @@ def DeleteBuyPrices(buyprices, quantity):
             buyprices[i].cryptoQuantity -= quantity
             buyprices[i].save()
             break
+    # checks for buyprices to avoid wallet bug
+    try:
+        check = BuyPrice.objects.get(user=user, cryptoName=cryptoname)
+    except:
+        check = False
+
+    if check is False:
+        CollectBuyPrices(user, day, time, cryptoname, 0, 0)
 
 
 class CustomLoginView(LoginView):
@@ -254,7 +262,8 @@ def sell_cryptos(request):
                     curr_time = datetime.now().time()
                     CreateSellTransaction(request.user, today, curr_time, selling_coin, "sell",
                         selling_quantity, selling_coin_exchange, user_final_balance)
-                    DeleteBuyPrices(user_prices, selling_quantity_float)
+                    DeleteBuyPrices(user_prices, selling_quantity_float,
+                                    request.user, selling_coin, today, curr_time)
                     return render(request, 'success-sell.html', {
                         "selling_coin": selling_coin,
                         "selling_quantity": selling_quantity,
@@ -298,14 +307,20 @@ def send_crypto(request):
                     receiver_crypto.cryptoQuantity += float(sending_coin_quantity)
                     receiver_crypto.save()
 
+                    if sender_crypto.cryptoQuantity == 0:
+                        sender_crypto.delete()
+
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
-                    DeleteBuyPrices(sender_buyprices, sending_quantity_float)
-                    CollectBuyPrices(receiver_wallet.user, today, curr_time, sending_coin, 0, 0)
-
+                    DeleteBuyPrices(sender_buyprices, sending_quantity_float,
+                                    request.user, sending_coin, today, curr_time)
                 else:
                     sender_crypto.cryptoQuantity -= float(sending_coin_quantity)
                     sender_crypto.save()
+
+                    if sender_crypto.cryptoQuantity == 0:
+                        sender_crypto.delete()
+
                     CreateSendReceiveTransaction(request.user, today, curr_time,
                         "send", sending_coin, sending_coin_quantity)
                     new_crypto = CryptoWallet()
@@ -316,7 +331,8 @@ def send_crypto(request):
 
                     CreateSendReceiveTransaction(receiver_wallet.user, today,
                         curr_time, "receive", sending_coin, sending_coin_quantity)
-                    DeleteBuyPrices(sender_buyprices, sending_quantity_float)
+                    DeleteBuyPrices(sender_buyprices, sending_quantity_float,
+                                    request.user, sending_coin, today, curr_time)
                     CollectBuyPrices(receiver_wallet.user, today, curr_time, sending_coin, 0, 0)
 
                 return render(request, 'success-send.html', {
